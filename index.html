@@ -544,6 +544,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <button class="sb-btn" id="sb-btn-exc" onclick="slotBatchExcerpt()">
             <span id="sb-spin-exc" class="slot-spinner"></span>📝 Resumir
           </button>
+          <button class="sb-btn" id="sb-btn-acat" onclick="slotBatchCategorize()" style="background:rgba(120,80,200,.25);border-color:rgba(120,80,200,.4);color:rgba(200,180,255,.9);">
+            <span id="sb-spin-acat" class="slot-spinner"></span>🏷 Categorizar
+          </button>
 
           <div class="sb-sep"></div>
 
@@ -806,7 +809,7 @@ const AUTHOR_NAME    = "Mãe Anna";
 // STATE — _posts é a fonte de verdade local
 // ═══════════════════════════════════════════════
 let _posts      = [];
-let _cats       = ["Notícias","Fundamentos","História","Reflexões"];
+let _cats       = ["Doutrina e Fundamentos","Desenvolvimento Mediúnico","Práticas e Preceitos","Orixás e Guias","Vida no Terreiro","Notícias e Avisos"];
 let _filter     = "todas";
 let _activePid  = null;
 let _unsubPosts = null;
@@ -982,6 +985,9 @@ function addSlot(data = {}) {
           <button class="btn-slot green" id="${id}-btn-exc" onclick="slotExcerpt('${id}')">
             <span id="${id}-spin-exc" class="slot-spinner"></span>📝 Resumo
           </button>
+          <button class="btn-slot" id="${id}-btn-cat" onclick="slotCategorize('${id}')" style="background:rgba(120,80,200,.25);border-color:rgba(120,80,200,.4);">
+            <span id="${id}-spin-cat" class="slot-spinner"></span>🏷 Categorizar
+          </button>
         </div>
       </div>
       <div class="slot-col">
@@ -1087,7 +1093,87 @@ async function slotExcerpt(id) {
   btn.disabled = false; spin.style.display = "none";
 }
 
-// ─── IA em lote ───────────────────────────────
+// ─── Categorizar via IA (individual) ─────────
+async function slotCategorize(id) {
+  const src = document.getElementById(`${id}-title`)?.value.trim()
+    + ' ' + (document.getElementById(`${id}-raw`)?.value.trim()
+    || document.getElementById(`${id}-body`)?.value.trim() || '');
+  if (!src.trim()) { showToast("Preencha o título ou o texto primeiro.", true); return; }
+
+  const btn  = document.getElementById(`${id}-btn-cat`);
+  const spin = document.getElementById(`${id}-spin-cat`);
+  btn.disabled = true; spin.style.display = "inline-block";
+
+  try {
+    const cat = await callAI(
+      `Você é editora do blog "Terreiro Bolhas de Luz" (Umbanda e Quimbanda, Porto Alegre, RS).
+Categorize o texto abaixo em UMA das seguintes categorias. Retorne APENAS o nome exato da categoria, nada mais.
+
+Categorias disponíveis:
+- Doutrina e Fundamentos — o que é Umbanda/Quimbanda, princípios gerais, filosofia religiosa
+- Desenvolvimento Mediúnico — sessões, corrente, etapas, cruzamento, cacicamento, guias, mediunidade
+- Práticas e Preceitos — banhos, vestimenta, assentamentos, preceito, resguardo, rituais do dia a dia
+- Orixás e Guias — Orixás específicos, falanges, entidades (Exu, Pombas Giras, Caboclos, etc.)
+- Vida no Terreiro — convivência, relatos, reflexões pessoais, segurança, avisos de comportamento
+- Notícias e Avisos — agenda, datas, obrigações financeiras, informes práticos`,
+      src.slice(0, 2000)
+    );
+
+    const validCats = _cats;
+    const matched = validCats.find(c => cat.trim().toLowerCase() === c.toLowerCase())
+      || validCats.find(c => cat.includes(c)) || null;
+
+    if (matched) {
+      const sel = document.getElementById(`${id}-cat`);
+      if (sel) sel.value = matched;
+      showToast(`Categoria: ${matched} ✨`);
+    } else {
+      showToast(`IA sugeriu "${cat.trim()}" — selecione manualmente.`, true);
+    }
+  } catch(e) { showToast("Erro na API.", true); }
+  btn.disabled = false; spin.style.display = "none";
+}
+
+// ─── Categorizar em lote ──────────────────────
+async function slotBatchCategorize() {
+  const ids = getCheckedSlotIds();
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+
+  const btn  = document.getElementById("sb-btn-acat");
+  const spin = document.getElementById("sb-spin-acat");
+  btn.disabled = true; spin.style.display = "inline-block";
+
+  let ok = 0;
+  for (const id of ids) {
+    const src = document.getElementById(`${id}-title`)?.value.trim()
+      + ' ' + (document.getElementById(`${id}-raw`)?.value.trim()
+      || document.getElementById(`${id}-body`)?.value.trim() || '');
+    if (!src.trim()) continue;
+    try {
+      const cat = await callAI(
+        `Você é editora do blog "Terreiro Bolhas de Luz". Categorize em UMA das categorias abaixo. Retorne APENAS o nome exato.
+
+- Doutrina e Fundamentos
+- Desenvolvimento Mediúnico
+- Práticas e Preceitos
+- Orixás e Guias
+- Vida no Terreiro
+- Notícias e Avisos`,
+        src.slice(0, 2000)
+      );
+      const matched = _cats.find(c => cat.trim().toLowerCase() === c.toLowerCase())
+        || _cats.find(c => cat.includes(c)) || null;
+      if (matched) {
+        const sel = document.getElementById(`${id}-cat`);
+        if (sel) sel.value = matched;
+        ok++;
+      }
+    } catch(e) {}
+  }
+
+  btn.disabled = false; spin.style.display = "none";
+  showToast(`${ok} de ${ids.length} post(s) categorizados! 🏷`);
+}
 async function slotBatchFormat() {
   const ids = getCheckedSlotIds();
   if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
