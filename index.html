@@ -161,7 +161,64 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-add-slot{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:8px 18px;cursor:pointer;transition:background .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .btn-add-slot:hover{background:rgba(255,255,255,.14);}
 
-/* GERENCIADOR DE POSTS — CLEAN TABLE */
+/* BARRA DE LOTE DOS SLOTS */
+.sb-bar{
+  display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+  background:rgba(0,0,0,.3);border:1px solid rgba(196,57,107,.2);
+  border-radius:8px;padding:.6rem .9rem;margin-bottom:.6rem;
+}
+.sb-check-all-label{
+  display:flex;align-items:center;gap:.4rem;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:.75rem;
+  color:rgba(255,255,255,.6);flex-shrink:0;
+}
+.sb-check-all-label input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+#sb-sel-count{font-weight:500;}
+.sb-sep{width:1px;height:16px;background:rgba(255,255,255,.1);flex-shrink:0;}
+.sb-cat-sel{
+  background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);
+  border-radius:5px;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:.75rem;padding:4px 8px;outline:none;cursor:pointer;
+}
+.sb-cat-sel option{background:#3d2232;}
+.sb-btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:5px;color:rgba(255,255,255,.7);
+  font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.08em;
+  font-weight:700;text-transform:uppercase;
+  padding:5px 11px;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:.3rem;
+  transition:background .14s,border-color .14s,color .14s;
+}
+.sb-btn:hover{background:rgba(255,255,255,.14);color:#fff;}
+.sb-btn:disabled{opacity:.35;cursor:not-allowed;}
+.sb-btn.green{background:rgba(42,122,96,.25);border-color:rgba(42,122,96,.35);color:#6ecfb0;}
+.sb-btn.green:hover{background:rgba(42,122,96,.4);}
+.sb-btn.amber{background:rgba(200,160,0,.15);border-color:rgba(200,160,0,.25);color:#e8c94a;}
+.sb-btn.amber:hover{background:rgba(200,160,0,.25);}
+.sb-btn.red{background:rgba(184,64,64,.18);border-color:rgba(184,64,64,.28);color:#e08080;}
+.sb-btn.red:hover{background:rgba(184,64,64,.3);}
+.sb-btn.publish{
+  background:linear-gradient(135deg,var(--gold),var(--gold-light));
+  border:none;color:#fff;
+}
+.sb-btn.publish:hover{opacity:.88;}
+
+/* STATUS DOS SLOTS */
+.slot.status-pronto  .slot-head{background:rgba(42,122,96,.25);}
+.slot.status-pendente .slot-head{background:rgba(196,57,107,.15);}
+.slot.status-cancelado{opacity:.45;pointer-events:none;}
+.slot-status-badge{
+  font-family:'Cinzel',serif;font-size:.55rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  border-radius:10px;padding:2px 8px;flex-shrink:0;
+}
+.badge-pendente{background:rgba(196,57,107,.2);color:rgba(255,180,150,.8);}
+.badge-pronto{background:rgba(42,122,96,.25);color:#6ecfb0;}
+.badge-cancelado{background:rgba(100,100,100,.2);color:rgba(255,255,255,.3);}
+.slot-check{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+
+/* GERENCIADOR DE POSTS */
 .mgr-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;margin-top:.9rem;}
 .mgr-panel-head{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:.5rem;}
 .mgr-panel-label{font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.4);}
@@ -467,15 +524,53 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="qc-header">
         <p class="qc-title">✍️ Redação rápida <span>— admin</span></p>
         <div class="qc-actions">
-          <button class="btn-add-slot" onclick="addSlot()">+ Adicionar post</button>
-          <button class="btn-publish-batch" id="btn-publish-all" onclick="publishAll()">
-            <span id="batch-spinner" class="slot-spinner" style="border-top-color:#fff;"></span>
-            🚀 Publicar todos
+          <button class="btn-add-slot" onclick="addSlot()">+ Novo post</button>
+        </div>
+      </div>
+
+      <!-- BARRA DE AÇÕES EM LOTE DOS SLOTS -->
+      <div id="slot-batch-bar" style="display:none;">
+        <div class="sb-bar">
+          <label class="sb-check-all-label">
+            <input type="checkbox" id="sb-check-all" onchange="slotToggleAll(this.checked)">
+            <span id="sb-sel-count">0 selecionados</span>
+          </label>
+          <div class="sb-sep"></div>
+
+          <!-- IA em lote -->
+          <button class="sb-btn" id="sb-btn-fmt" onclick="slotBatchFormat()">
+            <span id="sb-spin-fmt" class="slot-spinner"></span>✨ Formatar
+          </button>
+          <button class="sb-btn" id="sb-btn-exc" onclick="slotBatchExcerpt()">
+            <span id="sb-spin-exc" class="slot-spinner"></span>📝 Resumir
+          </button>
+
+          <div class="sb-sep"></div>
+
+          <!-- Categoria em lote -->
+          <select class="sb-cat-sel" id="sb-cat-sel">
+            <option value="">Categoria…</option>
+          </select>
+          <button class="sb-btn" onclick="slotBatchCategory()">🏷 Aplicar</button>
+
+          <div class="sb-sep"></div>
+
+          <!-- Status em lote -->
+          <button class="sb-btn green" onclick="slotBatchStatus('pronto')">✅ Marcar prontos</button>
+          <button class="sb-btn amber" onclick="slotBatchStatus('pendente')">🟡 Pendente</button>
+          <button class="sb-btn red"   onclick="slotBatchCancel()">❌ Cancelar</button>
+
+          <div class="sb-sep"></div>
+
+          <!-- Publicar selecionados -->
+          <button class="sb-btn publish" id="sb-btn-pub" onclick="publishSelected()">
+            <span id="sb-spin-pub" class="slot-spinner" style="border-top-color:#fff;"></span>
+            🚀 Publicar prontos
           </button>
         </div>
       </div>
 
-      <div class="cat-panel">
+      <div id="slots-container" style="margin-top:.6rem;"></div>
         <p class="cat-panel-title">Categorias</p>
         <div class="cat-list-admin" id="cat-list-admin"></div>
         <div class="cat-add-row">
@@ -547,7 +642,71 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         </div>
       </div>
 
-      <div id="slots-container" style="margin-top:1rem;"></div>
+      <div id="slots-container" style="margin-top:.6rem;"></div>
+
+      <div class="cat-panel" style="margin-top:.9rem;">
+        <p class="cat-panel-title">Categorias</p>
+        <div class="cat-list-admin" id="cat-list-admin"></div>
+        <div class="cat-add-row">
+          <input type="text" class="slot-input-sm" id="cat-new-input" placeholder="Nova categoria…" style="flex:1;" onkeydown="if(event.key==='Enter')addCategory()">
+          <button class="btn-slot" onclick="addCategory()">+ Adicionar</button>
+          <button class="btn-slot green" onclick="saveCategories()">💾 Salvar</button>
+        </div>
+        <div style="margin-top:.7rem;padding-top:.7rem;border-top:1px solid rgba(196,57,107,.15);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem;">
+            <span style="font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">✏️ Renomear em lote</span>
+            <div style="display:flex;gap:.4rem;">
+              <button class="btn-slot" onclick="renderCatEditList()">Editar nomes</button>
+              <button class="btn-slot green" onclick="saveCatEdits()">💾 Aplicar</button>
+            </div>
+          </div>
+          <div class="cat-edit-list" id="cat-edit-list"></div>
+        </div>
+      </div>
+
+      <!-- Gerenciador de posts em lote -->
+      <div class="mgr-panel">
+        <div class="mgr-panel-head">
+          <span class="mgr-panel-label">📋 Posts publicados</span>
+          <button class="mgr-refresh" onclick="renderMgrList()">↺ Atualizar</button>
+        </div>
+        <div class="mgr-action-bar" id="mgr-action-bar">
+          <span class="mgr-sel-count" id="mgr-sel-count">0</span>
+          <span style="font-family:'DM Sans',sans-serif;font-size:.72rem;color:rgba(255,255,255,.45);">selecionados</span>
+          <div class="mgr-action-sep"></div>
+          <select class="mgr-cat-select" id="mgr-cat-target"><option value="">Mover para…</option></select>
+          <button class="mgr-act-btn" onclick="batchChangeCategory()">✔ Aplicar</button>
+          <div class="mgr-action-sep"></div>
+          <button class="mgr-act-btn danger" onclick="batchDelete()">🗑 Excluir</button>
+          <button class="mgr-deselect" onclick="toggleSelectAll(false)">✕</button>
+        </div>
+        <div class="mgr-table-head">
+          <div class="mgr-check-all-wrap"><input type="checkbox" id="mgr-check-all" onchange="toggleSelectAll(this.checked)"></div>
+          <span class="mgr-th">Título</span>
+          <span class="mgr-th">Categoria</span>
+          <span class="mgr-th center">Data</span>
+          <span class="mgr-th"></span>
+        </div>
+        <div class="mgr-rows" id="mgr-list">
+          <p class="mgr-empty">Clique em Atualizar para carregar os posts.</p>
+        </div>
+      </div>
+
+      <!-- Importação -->
+      <div class="import-panel">
+        <p class="import-panel-title">📥 Importação em Lote (Excel / CSV)</p>
+        <div class="import-drop-zone" id="import-drop-zone">
+          <input type="file" id="import-file" accept=".xlsx,.xls,.csv" onchange="handleImportFile(event)">
+          <div class="import-drop-icon">📄</div>
+          <p class="import-drop-label">Arraste sua planilha aqui ou <strong>clique para selecionar</strong></p>
+          <p class="import-drop-hint">Formatos suportados: .xlsx, .csv</p>
+        </div>
+        <div class="import-template-row">
+          <span class="import-drop-hint" style="margin:0;">Precisa do formato correto?</span>
+          <button class="btn-template" onclick="downloadTemplate()">⬇ Baixar Planilha Modelo</button>
+        </div>
+      </div>
+
       </div><!-- /admin-panel-inner -->
     </div>
 
@@ -777,20 +936,29 @@ async function saveCategories() {
   }
 }
 
+
 // ═══════════════════════════════════════════════
-// SLOTS
+// SLOTS — sistema de rascunhos com estados
 // ═══════════════════════════════════════════════
+// Estado: pendente | pronto | cancelado
+const _slotData = {}; // { slotId: { status, title, cat, date, raw, body, excerpt } }
+
 function addSlot(data = {}) {
   _slotCount++;
   const id    = `slot-${_slotCount}`;
   const today = new Date().toISOString().slice(0,10);
+  const status = data.status || "pendente";
+
+  _slotData[id] = { status };
 
   const wrap = document.createElement("div");
-  wrap.className = "slot";
+  wrap.className = `slot status-${status}`;
   wrap.id = id;
   wrap.innerHTML = `
     <div class="slot-head">
+      <input type="checkbox" class="slot-check" data-sid="${id}" onchange="updateSlotBatchBar()">
       <span class="slot-num">#${_slotCount}</span>
+      <span class="slot-status-badge badge-${status}" id="${id}-badge">${statusLabel(status)}</span>
       <div class="slot-head-fields">
         <input type="text" class="slot-input-sm title-field" id="${id}-title"
           placeholder="Título do post…" value="${escAttr(data.title||'')}">
@@ -828,13 +996,62 @@ function addSlot(data = {}) {
       </div>
     </div>`;
   document.getElementById("slots-container").appendChild(wrap);
+  updateSlotBatchBar();
 }
 
 function removeSlot(id) {
   document.getElementById(id)?.remove();
+  delete _slotData[id];
+  updateSlotBatchBar();
 }
 
-// ─── IA por slot ──────────────────────────────
+function statusLabel(s) {
+  return s === "pronto" ? "✅ Pronto" : s === "cancelado" ? "❌ Cancelado" : "🟡 Pendente";
+}
+
+function setSlotStatus(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (_slotData[id]) _slotData[id].status = status;
+  el.className = `slot status-${status}`;
+  const badge = document.getElementById(`${id}-badge`);
+  if (badge) { badge.className = `slot-status-badge badge-${status}`; badge.textContent = statusLabel(status); }
+}
+
+// ─── Barra de lote dos slots ──────────────────
+function updateSlotBatchBar() {
+  const slots   = document.querySelectorAll("#slots-container .slot");
+  const checked = document.querySelectorAll("#slots-container .slot-check:checked");
+  const bar     = document.getElementById("slot-batch-bar");
+
+  // atualiza select de categorias
+  const catSel = document.getElementById("sb-cat-sel");
+  if (catSel) {
+    catSel.innerHTML = `<option value="">Categoria…</option>` +
+      _cats.map(c => `<option>${c}</option>`).join("");
+  }
+
+  if (slots.length === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "";
+
+  const count = document.getElementById("sb-sel-count");
+  if (count) count.textContent = `${checked.length} selecionado(s)`;
+
+  const all = document.getElementById("sb-check-all");
+  if (all) all.checked = slots.length > 0 && checked.length === slots.length;
+}
+
+function slotToggleAll(checked) {
+  document.querySelectorAll("#slots-container .slot-check").forEach(cb => cb.checked = checked);
+  updateSlotBatchBar();
+}
+
+function getCheckedSlotIds() {
+  return [...document.querySelectorAll("#slots-container .slot-check:checked")]
+    .map(cb => cb.dataset.sid);
+}
+
+// ─── IA individual ────────────────────────────
 async function slotFormat(id) {
   const raw = document.getElementById(`${id}-raw`).value.trim();
   if (!raw) { showToast("Cole o texto bruto primeiro.", true); return; }
@@ -870,76 +1087,150 @@ async function slotExcerpt(id) {
   btn.disabled = false; spin.style.display = "none";
 }
 
-// ─── Publicar todos ───────────────────────────
-async function publishAll() {
-  const slots = document.querySelectorAll("#slots-container .slot");
-  if (!slots.length) { showToast("Nenhum post para publicar.", true); return; }
+// ─── IA em lote ───────────────────────────────
+async function slotBatchFormat() {
+  const ids = getCheckedSlotIds();
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+  const btn  = document.getElementById("sb-btn-fmt");
+  const spin = document.getElementById("sb-spin-fmt");
+  btn.disabled = true; spin.style.display = "inline-block";
+  let ok = 0;
+  for (const id of ids) {
+    const raw = document.getElementById(`${id}-raw`)?.value.trim();
+    if (!raw) continue;
+    try {
+      const html = await callAI(
+        `Você é editora do blog espiritual "Terreiro Bolhas de Luz". Transforme o texto bruto em HTML limpo. Use apenas <p> <h2> <h3> <blockquote> <em> <strong>. Preserve a voz da autora. Retorne SOMENTE o HTML.`,
+        `Texto bruto:\n\n${raw}`
+      );
+      document.getElementById(`${id}-body`).value = html;
+      ok++;
+    } catch(e) {}
+  }
+  btn.disabled = false; spin.style.display = "none";
+  showToast(`${ok} de ${ids.length} formatado(s)! ✨`);
+}
 
-  const btn  = document.getElementById("btn-publish-all");
-  const spin = document.getElementById("batch-spinner");
+async function slotBatchExcerpt() {
+  const ids = getCheckedSlotIds();
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+  const btn  = document.getElementById("sb-btn-exc");
+  const spin = document.getElementById("sb-spin-exc");
+  btn.disabled = true; spin.style.display = "inline-block";
+  let ok = 0;
+  for (const id of ids) {
+    const src = (document.getElementById(`${id}-body`)?.value.trim()
+      || document.getElementById(`${id}-raw`)?.value.trim() || "");
+    if (!src) continue;
+    try {
+      const text = await callAI(
+        `Escreva um resumo curto (2-3 frases, máx 280 caracteres) para o blog "Terreiro Bolhas de Luz". Tom acolhedor, espiritual, direto. Retorne APENAS o texto.`,
+        src.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,3000)
+      );
+      document.getElementById(`${id}-excerpt`).value = text;
+      ok++;
+    } catch(e) {}
+  }
+  btn.disabled = false; spin.style.display = "none";
+  showToast(`${ok} resumo(s) gerado(s)! ✨`);
+}
+
+function slotBatchCategory() {
+  const ids = getCheckedSlotIds();
+  const cat = document.getElementById("sb-cat-sel")?.value;
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+  if (!cat) { showToast("Escolha uma categoria.", true); return; }
+  ids.forEach(id => {
+    const sel = document.getElementById(`${id}-cat`);
+    if (sel) sel.value = cat;
+  });
+  showToast(`Categoria "${cat}" aplicada a ${ids.length} slot(s).`);
+}
+
+function slotBatchStatus(status) {
+  const ids = getCheckedSlotIds();
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+  ids.forEach(id => setSlotStatus(id, status));
+  showToast(`${ids.length} slot(s) marcado(s) como ${statusLabel(status)}.`);
+}
+
+function slotBatchCancel() {
+  const ids = getCheckedSlotIds();
+  if (!ids.length) { showToast("Selecione pelo menos um slot.", true); return; }
+  ids.forEach(id => setSlotStatus(id, "cancelado"));
+  showToast(`${ids.length} slot(s) cancelado(s).`);
+}
+
+// ─── Publicar só os prontos ───────────────────
+async function publishSelected() {
+  const ids = getCheckedSlotIds();
+  const prontos = ids.filter(id => {
+    const el = document.getElementById(id);
+    return el && el.classList.contains("status-pronto");
+  });
+
+  if (!prontos.length) {
+    showToast("Nenhum slot marcado como ✅ Pronto entre os selecionados.", true);
+    return;
+  }
+
+  const btn  = document.getElementById("sb-btn-pub");
+  const spin = document.getElementById("sb-spin-pub");
   btn.disabled = true; spin.style.display = "inline-block";
 
   const toSave = [];
   const erros  = [];
 
-  slots.forEach(slot => {
-    const sid     = slot.id;
-    const title   = (document.getElementById(`${sid}-title`)?.value || "").trim();
-    const body    = (document.getElementById(`${sid}-body`)?.value  || "").trim();
-    const excerpt = (document.getElementById(`${sid}-excerpt`)?.value || "").trim();
-    const cat     = document.getElementById(`${sid}-cat`)?.value || _cats[0];
-    const dateVal = document.getElementById(`${sid}-date`)?.value || new Date().toISOString().slice(0,10);
+  prontos.forEach(id => {
+    const title   = (document.getElementById(`${id}-title`)?.value || "").trim();
+    const body    = (document.getElementById(`${id}-body`)?.value  || "").trim();
+    const excerpt = (document.getElementById(`${id}-excerpt`)?.value || "").trim();
+    const cat     = document.getElementById(`${id}-cat`)?.value || _cats[0];
+    const dateVal = document.getElementById(`${id}-date`)?.value || new Date().toISOString().slice(0,10);
+    const raw     = (document.getElementById(`${id}-raw`)?.value || "").trim();
 
-    if (!title) { erros.push(sid); return; }
+    if (!title) { erros.push(id); return; }
 
     const slug = title.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
       .replace(/[^a-z0-9\s-]/g,"").trim().replace(/\s+/g,"-")
       + "-" + dateVal.replace(/-/g,"");
 
-    const [y, m, d] = dateVal.split("-");
-    toSave.push({
-      id: slug, title, category: cat, body, excerpt,
-      date: `${d}/${m}/${y}`, dateSort: dateVal, author: AUTHOR_NAME
-    });
+    const [y,m,d] = dateVal.split("-");
+    toSave.push({ id:slug, title, category:cat, body, excerpt, raw,
+      date:`${d}/${m}/${y}`, dateSort:dateVal, author:AUTHOR_NAME });
   });
 
   if (erros.length) {
-    showToast(`${erros.length} post(s) sem título — preencha antes de publicar.`, true);
+    showToast(`${erros.length} slot(s) sem título.`, true);
     btn.disabled = false; spin.style.display = "none";
     return;
   }
 
   if (_usingFirebase) {
-    // ── Modo Firebase ──────────────────────────
     try {
       await window._savePosts(toSave);
-      // _loadPosts vai atualizar _posts via onSnapshot automaticamente
-      document.getElementById("slots-container").innerHTML = "";
+      prontos.forEach(id => removeSlot(id));
       showToast(`${toSave.length} post(s) publicado(s)! 🎉`);
     } catch(e) {
       showToast("Erro ao salvar no Firebase.", true);
-      console.error(e);
     }
   } else {
-    // ── Modo local (Firebase não configurado) ──
     toSave.forEach(p => {
       const idx = _posts.findIndex(x => x.id === p.id);
-      if (idx >= 0) {
-        _posts[idx] = p;  // atualiza existente
-      } else {
-        _posts.push(p);   // adiciona novo
-      }
+      if (idx >= 0) _posts[idx] = p; else _posts.push(p);
     });
-    // reordena por data decrescente
-    _posts.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
-    document.getElementById("slots-container").innerHTML = "";
+    _posts.sort((a,b) => b.dateSort.localeCompare(a.dateSort));
+    prontos.forEach(id => removeSlot(id));
     renderPostList();
-    showToast(`${toSave.length} post(s) salvos localmente. Configure o Firebase para persistir.`);
+    showToast(`${toSave.length} post(s) salvos localmente.`);
   }
 
   btn.disabled = false; spin.style.display = "none";
 }
+
+// mantém compatibilidade com código antigo
+async function publishAll() { await publishSelected(); }
 
 // ═══════════════════════════════════════════════
 // IMPORTAÇÃO EXCEL / CSV
