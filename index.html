@@ -80,7 +80,9 @@
     window._loadCategories= async () => null;
   }
 
+  // Sinaliza pro script principal que o Firebase terminou de inicializar
   window._fbReady = _fbReady;
+  document.dispatchEvent(new CustomEvent("fbReady", { detail: _fbReady }));
 </script>
 
 <style>
@@ -865,17 +867,18 @@ function initDragAndDrop() {
 // POSTS — lista
 // ═══════════════════════════════════════════════
 function initPosts() {
+  // Se o Firebase foi inicializado com sucesso (não tem stubs), usa Firebase
+  _usingFirebase = window._fbReady === true;
+
   try {
     const unsub = window._loadPosts(posts => {
       _posts = posts;
-      _usingFirebase = true;
+      _usingFirebase = true; // confirma de novo quando o snapshot chega
       renderPostList();
-      // atualiza gerenciador se já estiver aberto
       if (document.getElementById("mgr-list")?.querySelector(".mgr-item")) renderMgrList();
     });
     _unsubPosts = unsub;
   } catch(e) {
-    // Firebase não configurado — usa posts de exemplo
     _posts = SAMPLE_POSTS;
     _usingFirebase = false;
     renderPostList();
@@ -1213,7 +1216,8 @@ document.addEventListener("keydown", e => {
   if (e.target.id === "comment-input" && (e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment();
 });
 
-async function init() {
+// Aguarda o módulo Firebase terminar antes de inicializar
+document.addEventListener("fbReady", async () => {
   renderCatMenu();
   try {
     const cats = await window._loadCategories();
@@ -1221,8 +1225,7 @@ async function init() {
   } catch(e) {}
   initPosts();
   initDragAndDrop();
-}
-init();
+});
 </script>
 </body>
 </html>
