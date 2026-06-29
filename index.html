@@ -6,6 +6,7 @@
 <title>Blog — Terreiro Bolhas de Luz</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
@@ -279,6 +280,103 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .comment-text{font-family:'Crimson Pro',serif;font-size:.93rem;line-height:1.52;}
 .comments-empty{font-family:'Crimson Pro',serif;font-size:.9rem;color:var(--text-dim);font-style:italic;text-align:center;padding:1rem 0;}
 
+/* ═══════════════════════════════
+   IMPORTAÇÃO EM LOTE
+═══════════════════════════════ */
+.import-panel{
+  background:rgba(255,255,255,.04);
+  border:1px dashed rgba(196,57,107,.3);
+  border-radius:10px;
+  padding:1rem 1.1rem;
+  margin-top:.9rem;
+}
+.import-panel-title{
+  font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);margin-bottom:.7rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.import-drop-zone{
+  border:2px dashed rgba(196,57,107,.3);
+  border-radius:8px;padding:1.4rem 1rem;
+  text-align:center;cursor:pointer;
+  transition:border-color .16s,background .16s;
+  position:relative;
+}
+.import-drop-zone:hover,.import-drop-zone.drag-over{
+  border-color:rgba(196,57,107,.7);
+  background:rgba(196,57,107,.06);
+}
+.import-drop-zone input[type=file]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+.import-drop-icon{font-size:1.6rem;margin-bottom:.4rem;}
+.import-drop-label{
+  font-family:'DM Sans',sans-serif;font-size:.82rem;
+  color:rgba(255,255,255,.55);line-height:1.5;
+}
+.import-drop-label strong{color:rgba(255,255,255,.8);}
+.import-drop-hint{
+  font-family:'Crimson Pro',serif;font-size:.78rem;
+  color:rgba(255,255,255,.35);font-style:italic;margin-top:.25rem;
+}
+
+/* Template download link */
+.import-template-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:.65rem;flex-wrap:wrap;gap:.4rem;
+}
+.btn-template{
+  background:none;border:1px solid rgba(255,255,255,.15);
+  border-radius:5px;color:rgba(255,255,255,.5);
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;padding:5px 12px;cursor:pointer;
+  transition:border-color .16s,color .16s;
+}
+.btn-template:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75);}
+
+/* Preview da importação */
+#import-preview{margin-top:.9rem;display:none;}
+.import-preview-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem;
+}
+.import-preview-count{
+  font-family:'Cinzel',serif;font-size:.6rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);
+}
+.import-table-wrap{
+  overflow-x:auto;border-radius:6px;
+  border:1px solid rgba(196,57,107,.2);
+  max-height:240px;overflow-y:auto;
+}
+.import-table{
+  width:100%;border-collapse:collapse;
+  font-family:'DM Sans',sans-serif;font-size:.78rem;
+  color:rgba(255,255,255,.8);
+}
+.import-table th{
+  background:rgba(196,57,107,.2);
+  padding:6px 10px;text-align:left;
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);
+  position:sticky;top:0;white-space:nowrap;
+}
+.import-table td{
+  padding:5px 10px;border-top:1px solid rgba(196,57,107,.1);
+  vertical-align:top;max-width:200px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.import-table tr:hover td{background:rgba(196,57,107,.07);}
+.import-row-ok td:first-child::before{content:"✓ ";color:#3a9a78;}
+.import-row-warn td:first-child::before{content:"⚠ ";color:#c8a000;}
+.import-warn-msg{
+  font-size:.7rem;color:#c8a000;
+  font-family:'Crimson Pro',serif;font-style:italic;
+  margin-top:.4rem;
+}
+.import-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;}
+
 /* MISC */
 .toast{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(20px);background:#fff;border:1px solid var(--gold);color:var(--gold);border-radius:7px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;box-shadow:0 4px 20px rgba(196,57,107,.15);padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -302,7 +400,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="site-header">
   <div class="header-inner">
     <button class="site-logo" onclick="showView('list')"><span>🕯️</span> Bolhas de Luz</button>
@@ -316,7 +413,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 <main class="main-wrap">
 
-  <!-- ═══ LISTA ═══ -->
   <div id="list-view">
     <div class="blog-hero">
       <p class="hero-eyebrow">Terreiro Bolhas de Luz · Porto Alegre</p>
@@ -324,7 +420,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <p class="hero-sub">Ensinamentos, avisos e histórias da nossa gira.</p>
     </div>
 
-    <!-- ÁREA DE REDAÇÃO RÁPIDA — só aparece pra admin -->
     <div id="quick-compose" style="display:none;">
       <div class="qc-header">
         <p class="qc-title">✍️ Redação rápida <span>— admin</span></p>
@@ -337,7 +432,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         </div>
       </div>
 
-      <!-- Gerenciar categorias -->
       <div class="cat-panel">
         <p class="cat-panel-title">Categorias</p>
         <div class="cat-list-admin" id="cat-list-admin"></div>
@@ -348,13 +442,25 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         </div>
       </div>
 
+      <div class="import-panel">
+        <p class="import-panel-title">📥 Importação em Lote (Excel / CSV)</p>
+        <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file').click()">
+          <input type="file" id="import-file" accept=".xlsx, .xls, .csv" onchange="handleImportFile(event)">
+          <div class="import-drop-icon">📄</div>
+          <p class="import-drop-label">Arraste sua planilha aqui ou <strong>clique para selecionar</strong></p>
+          <p class="import-drop-hint">Formatos suportados: .xlsx, .csv</p>
+        </div>
+        <div class="import-template-row">
+          <span class="import-drop-hint" style="margin:0;">Precisa do formato correto?</span>
+          <button class="btn-template" onclick="downloadTemplate()">Baixar Planilha Modelo</button>
+        </div>
+      </div>
       <div id="slots-container" style="margin-top:1rem;"></div>
     </div>
 
     <div id="post-list"><div class="spinner"></div></div>
   </div>
 
-  <!-- ═══ POST FULL ═══ -->
   <div id="post-view">
     <button class="back-btn" onclick="showView('list')">← Voltar</button>
     <article>
@@ -801,6 +907,114 @@ async function submitComment() {
 }
 
 // ═══════════════════════════════════════════════
+// IMPORTAÇÃO / EXPORTAÇÃO (EXCEL/CSV)
+// ═══════════════════════════════════════════════
+
+// Função para exportar a planilha modelo
+function downloadTemplate() {
+  const headers = ["Titulo", "Categoria", "Data", "Resumo", "Texto_Bruto"];
+  const sampleRow = ["A Força das Águas", "Fundamentos", "12/08/2026", "Breve resumo...", "Texto longo e bruto para a IA formatar..."];
+  
+  const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Posts");
+  
+  // Ajusta a largura das colunas para ficar visualmente melhor no Excel
+  ws['!cols'] = [{wch: 25}, {wch: 15}, {wch: 12}, {wch: 35}, {wch: 50}];
+  
+  XLSX.writeFile(wb, "Modelo_Importacao_BolhasDeLuz.xlsx");
+}
+
+// Função para ler o arquivo e gerar os slots
+function handleImportFile(event) {
+  const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      // Converte a aba para JSON
+      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (json.length === 0) {
+        showToast("A planilha está vazia.", true);
+        return;
+      }
+
+      let count = 0;
+      json.forEach(row => {
+        // Normaliza as chaves da planilha para evitar erro de maiúscula/minúscula
+        const cleanRow = {};
+        for (let key in row) cleanRow[key.toLowerCase().trim()] = row[key];
+
+        const title = cleanRow['titulo'] || cleanRow['título'] || "";
+        if (!title) return; // Ignora linhas sem título
+
+        // Tratamento da data (o input type="date" exige formato YYYY-MM-DD)
+        let formattedDate = "";
+        const rawDate = cleanRow['data'];
+        
+        if (typeof rawDate === 'number') {
+          // O Excel armazena datas como números (dias desde 01/01/1900)
+          const dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+          formattedDate = dateObj.toISOString().slice(0, 10);
+        } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
+          // Converte DD/MM/YYYY para YYYY-MM-DD
+          const [d, m, y] = rawDate.split('/');
+          if (y && m && d) formattedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        } else {
+          formattedDate = rawDate; // Tenta usar como está
+        }
+
+        // Adiciona um novo slot com os dados preenchidos
+        addSlot({
+          title: title,
+          category: cleanRow['categoria'] || _cats[0],
+          date: formattedDate || new Date().toISOString().slice(0, 10),
+          excerpt: cleanRow['resumo'] || "",
+          raw: cleanRow['texto_bruto'] || cleanRow['texto bruto'] || ""
+        });
+        count++;
+      });
+
+      showToast(`${count} post(s) importado(s) da planilha! ✨`);
+    } catch (error) {
+      console.error(error);
+      showToast("Erro ao processar o arquivo.", true);
+    }
+  };
+  
+  reader.readAsArrayBuffer(file);
+  // Reseta o input para permitir importar o mesmo arquivo novamente se necessário
+  if(event.target.value) event.target.value = "";
+}
+
+function initDragAndDrop() {
+  const dropZone = document.getElementById("import-drop-zone");
+  if(!dropZone) return;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault(); e.stopPropagation();
+    });
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, () => dropZone.classList.add('drag-over'));
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'));
+  });
+
+  dropZone.addEventListener('drop', e => handleImportFile(e));
+}
+
+// ═══════════════════════════════════════════════
 // IA helper
 // ═══════════════════════════════════════════════
 async function callAI(system, userMsg) {
@@ -842,6 +1056,7 @@ async function init() {
     if (cats?.length) { _cats=cats; renderCatMenu(); }
   } catch(e) {}
   initPosts();
+  initDragAndDrop(); // Inicializa eventos de arrastar/soltar
 }
 init();
 </script>
