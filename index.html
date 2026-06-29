@@ -283,6 +283,24 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     </div>
 
     <div id="quick-compose" style="display:none;">
+
+      <!-- ── Login inline (sem prompt) ── -->
+      <div id="admin-login-bar" style="display:flex;align-items:center;gap:.6rem;background:rgba(0,0,0,.25);border-radius:8px;padding:.7rem 1rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <span style="font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.5);">🔐 Senha admin</span>
+        <input type="password" id="admin-pwd-input"
+          placeholder="Digite a senha…"
+          style="flex:1;min-width:140px;background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.3);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.85rem;padding:6px 10px;outline:none;"
+          onkeydown="if(event.key==='Enter')doAdminLogin()">
+        <button onclick="doAdminLogin()"
+          style="background:var(--gold);border:none;border-radius:6px;color:#fff;font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:7px 16px;cursor:pointer;">
+          Entrar
+        </button>
+        <span id="admin-login-err" style="display:none;font-family:'DM Sans',sans-serif;font-size:.75rem;color:#e88;width:100%;">Senha incorreta. Tente novamente.</span>
+      </div>
+
+      <!-- ── Painel (aparece após login) ── -->
+      <div id="admin-panel-inner" style="display:none;">
+
       <div class="qc-header">
         <p class="qc-title">✍️ Redação rápida <span>— admin</span></p>
         <div class="qc-actions">
@@ -319,6 +337,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
 
       <div id="slots-container" style="margin-top:1rem;"></div>
+      </div><!-- /admin-panel-inner -->
     </div>
 
     <div id="post-list"><div class="spinner"></div></div>
@@ -367,7 +386,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 // ═══════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════
-const ADMIN_PASSWORD = "bolhasdeluz2026"; // ← troque aqui
+const ADMIN_PASSWORD = "terreiro"; // ← troque aqui
 const AUTHOR_NAME    = "Mãe Anna";
 
 // ═══════════════════════════════════════════════
@@ -396,16 +415,30 @@ function showView(v) {
 // ═══════════════════════════════════════════════
 // AUTH / ADMIN
 // ═══════════════════════════════════════════════
-function checkAdmin() {
-  const pwd = prompt("Senha admin:");
+function doAdminLogin() {
+  const inp = document.getElementById("admin-pwd-input");
+  const err = document.getElementById("admin-login-err");
+  const pwd = (inp.value || "").trim();
   if (pwd === ADMIN_PASSWORD) {
     _isAdmin = true;
-    document.getElementById("quick-compose").style.display = "";
+    document.getElementById("admin-login-bar").style.display  = "none";
+    document.getElementById("admin-panel-inner").style.display = "";
     updateHeaderAuth();
     showToast("Modo admin ativado ✨");
-  } else if (pwd !== null) {
-    showToast("Senha incorreta.", true);
+    inp.value = "";
+  } else {
+    err.style.display = "block";
+    inp.value = "";
+    inp.focus();
+    setTimeout(() => { err.style.display = "none"; }, 3000);
   }
+}
+
+function checkAdmin() {
+  document.getElementById("quick-compose").style.display = "";
+  document.getElementById("admin-login-bar").style.display  = "flex";
+  document.getElementById("admin-panel-inner").style.display = "none";
+  document.getElementById("admin-pwd-input").focus();
 }
 
 function updateHeaderAuth() {
@@ -415,7 +448,7 @@ function updateHeaderAuth() {
     el.innerHTML = `
       ${user ? `<img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">` : ""}
       <span class="btn-pill active">Admin</span>
-      <button class="btn-pill" onclick="_isAdmin=false;document.getElementById('quick-compose').style.display='none';updateHeaderAuth();">Sair</button>`;
+      <button class="btn-pill" onclick="_isAdmin=false;document.getElementById('quick-compose').style.display='none';document.getElementById('admin-panel-inner').style.display='none';document.getElementById('admin-login-bar').style.display='flex';updateHeaderAuth();">Sair</button>`;
   } else if (user) {
     el.innerHTML = `
       <img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">
