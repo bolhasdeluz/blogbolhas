@@ -759,8 +759,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="pm-header">
       <div class="pm-meta" id="pm-meta"></div>
       <div class="pm-toggle" id="pm-toggle">
-        <button class="pm-toggle-btn active" id="pm-btn-resumo" onclick="switchVersion('resumo')">✨ Resumo</button>
-        <button class="pm-toggle-btn" id="pm-btn-original" onclick="switchVersion('original')">📋 Voz original</button>
+        <button class="pm-toggle-btn active" id="pm-btn-original" onclick="switchVersion('original')">📋 Voz original</button>
+        <button class="pm-toggle-btn" id="pm-btn-resumo" onclick="switchVersion('resumo')">✨ Resumo IA</button>
       </div>
       <button class="pm-close" onclick="closePostModal()">✕</button>
     </div>
@@ -1245,6 +1245,24 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "Modelo_Importacao_BolhasDeLuz.xlsx");
 }
 
+function extractOriginalText(rawHtml) {
+  if (!rawHtml) return '';
+  const s = String(rawHtml);
+  // Pega só o que vem depois do fechamento da <section>
+  const parts = s.split(/<\/section>/i);
+  const afterSection = parts.length > 1 ? parts[parts.length - 1] : s;
+  // Remove todas as tags HTML restantes e limpa espaços
+  return afterSection
+    .replace(/<[^>]+>/g, '\n')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function handleImportFile(event) {
   const file = event.target?.files?.[0] || event.dataTransfer?.files?.[0];
   if (!file) return;
@@ -1295,7 +1313,7 @@ function handleImportFile(event) {
           category : String(r["categoria"] || _cats[0]).trim(),
           date     : dateISO,
           excerpt  : String(r["resumo"] || "").trim(),
-          raw      : String(r["texto_bruto"] || r["texto bruto"] || "").trim(),
+          raw      : extractOriginalText(String(r["texto_bruto"] || r["texto bruto"] || "")),
         });
         count++;
       });
@@ -1479,7 +1497,7 @@ function openPost(id) {
   if (!p) return;
   _activePid    = id;
   _modalPost    = p;
-  _modalVersion = "resumo";
+  _modalVersion = "original"; // voz original é o padrão
 
   // preenche cabeçalho
   document.getElementById("pm-meta").innerHTML =
@@ -1492,8 +1510,8 @@ function openPost(id) {
      <span>·</span>
      <span>${p.date||""}</span>`;
 
-  // mostra conteúdo
-  switchVersion("resumo");
+  // mostra conteúdo — original é o padrão
+  switchVersion("original");
 
   // abre overlay
   document.getElementById("post-modal-overlay").classList.add("open");
