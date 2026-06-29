@@ -161,35 +161,58 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-add-slot{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:8px 18px;cursor:pointer;transition:background .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .btn-add-slot:hover{background:rgba(255,255,255,.14);}
 
-/* GERENCIADOR DE POSTS EM LOTE */
-.mgr-panel{background:rgba(255,255,255,.04);border:1px solid rgba(196,57,107,.2);border-radius:10px;padding:1rem 1.1rem;margin-top:.9rem;}
-.mgr-panel-title{font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.8rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
-.mgr-toolbar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem;padding-bottom:.7rem;border-bottom:1px solid rgba(196,57,107,.15);}
-.mgr-select-all{display:flex;align-items:center;gap:.4rem;font-family:'DM Sans',sans-serif;font-size:.78rem;color:rgba(255,255,255,.6);cursor:pointer;}
-.mgr-select-all input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
-.mgr-count{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-left:.2rem;}
-.mgr-batch-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto;}
-.mgr-cat-change{background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:5px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:4px 8px;outline:none;cursor:pointer;}
-.mgr-cat-change option{background:#3d2232;}
+/* GERENCIADOR DE POSTS — CLEAN TABLE */
+.mgr-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;margin-top:.9rem;}
+.mgr-panel-head{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:.5rem;}
+.mgr-panel-label{font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.mgr-refresh{background:none;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:rgba(255,255,255,.4);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;cursor:pointer;transition:border-color .14s,color .14s;}
+.mgr-refresh:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7);}
 
-.mgr-list{display:grid;gap:.5rem;max-height:320px;overflow-y:auto;padding-right:.2rem;}
-.mgr-list::-webkit-scrollbar{width:4px;}
-.mgr-list::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:4px;}
-.mgr-list::-webkit-scrollbar-thumb{background:rgba(196,57,107,.3);border-radius:4px;}
+/* barra de ações — aparece só com seleção */
+.mgr-action-bar{
+  display:none;align-items:center;gap:.5rem;
+  padding:.55rem 1rem;background:rgba(196,57,107,.12);
+  border-bottom:1px solid rgba(196,57,107,.2);flex-wrap:wrap;
+}
+.mgr-action-bar.visible{display:flex;}
+.mgr-sel-count{font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-light);margin-right:.2rem;}
+.mgr-action-sep{width:1px;height:16px;background:rgba(255,255,255,.1);flex-shrink:0;}
+.mgr-cat-select{background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.25);border-radius:5px;color:rgba(255,255,255,.8);font-family:'DM Sans',sans-serif;font-size:.75rem;padding:4px 8px;outline:none;cursor:pointer;}
+.mgr-cat-select option{background:#3d2232;}
+.mgr-act-btn{background:none;border:1px solid rgba(255,255,255,.12);border-radius:5px;color:rgba(255,255,255,.6);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;cursor:pointer;transition:all .14s;white-space:nowrap;}
+.mgr-act-btn:hover{border-color:rgba(255,255,255,.3);color:#fff;}
+.mgr-act-btn.danger{border-color:rgba(184,64,64,.3);color:rgba(184,64,64,.7);}
+.mgr-act-btn.danger:hover{background:rgba(184,64,64,.15);border-color:rgba(184,64,64,.5);color:#e88;}
+.mgr-deselect{background:none;border:none;color:rgba(255,255,255,.3);font-size:.85rem;cursor:pointer;margin-left:auto;padding:0 4px;transition:color .14s;}
+.mgr-deselect:hover{color:rgba(255,255,255,.7);}
 
-.mgr-item{display:flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.04);border:1px solid rgba(196,57,107,.12);border-radius:7px;padding:.55rem .8rem;transition:background .14s;}
-.mgr-item:hover{background:rgba(255,255,255,.07);}
-.mgr-item.selected{background:rgba(196,57,107,.12);border-color:rgba(196,57,107,.3);}
-.mgr-item input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
-.mgr-item-info{flex:1;min-width:0;}
-.mgr-item-title{font-family:'DM Sans',sans-serif;font-size:.82rem;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mgr-item-meta{font-size:.68rem;color:rgba(255,255,255,.35);margin-top:.1rem;}
-.mgr-item-cat{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(196,57,107,.7);background:rgba(196,57,107,.12);border-radius:10px;padding:1px 7px;flex-shrink:0;}
-.mgr-item-actions{display:flex;gap:.3rem;flex-shrink:0;}
-.mgr-edit-btn{background:none;border:1px solid rgba(255,255,255,.12);border-radius:4px;color:rgba(255,255,255,.45);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:3px 8px;cursor:pointer;transition:border-color .14s,color .14s;}
-.mgr-edit-btn:hover{border-color:var(--gold-light);color:var(--gold-light);}
-.mgr-del-btn{background:none;border:1px solid rgba(184,64,64,.2);border-radius:4px;color:rgba(184,64,64,.6);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:3px 8px;cursor:pointer;transition:background .14s;}
-.mgr-del-btn:hover{background:rgba(184,64,64,.15);color:#e88;}
+/* cabeçalho da tabela */
+.mgr-table-head{display:grid;grid-template-columns:32px 1fr 110px 90px 80px;align-items:center;padding:.45rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);}
+.mgr-th{font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);}
+.mgr-th.center{text-align:center;}
+
+/* linhas */
+.mgr-rows{max-height:340px;overflow-y:auto;}
+.mgr-rows::-webkit-scrollbar{width:3px;}
+.mgr-rows::-webkit-scrollbar-thumb{background:rgba(196,57,107,.25);border-radius:3px;}
+.mgr-row{display:grid;grid-template-columns:32px 1fr 110px 90px 80px;align-items:center;padding:.5rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);transition:background .12s;cursor:default;}
+.mgr-row:last-child{border-bottom:none;}
+.mgr-row:hover{background:rgba(255,255,255,.04);}
+.mgr-row.selected{background:rgba(196,57,107,.08);}
+.mgr-row input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+.mgr-row-title{font-family:'DM Sans',sans-serif;font-size:.8rem;color:rgba(255,255,255,.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:.5rem;}
+.mgr-row-cat{font-family:'Cinzel',serif;font-size:.56rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(196,57,107,.7);background:rgba(196,57,107,.1);border-radius:10px;padding:2px 8px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mgr-row-date{font-family:'DM Sans',sans-serif;font-size:.7rem;color:rgba(255,255,255,.3);text-align:center;}
+.mgr-row-acts{display:flex;gap:.3rem;justify-content:flex-end;}
+.mgr-row-edit{background:none;border:none;color:rgba(255,255,255,.25);font-size:.7rem;cursor:pointer;padding:3px 6px;border-radius:4px;transition:background .12s,color .12s;}
+.mgr-row-edit:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);}
+.mgr-row-del{background:none;border:none;color:rgba(184,64,64,.4);font-size:.7rem;cursor:pointer;padding:3px 6px;border-radius:4px;transition:background .12s,color .12s;}
+.mgr-row-del:hover{background:rgba(184,64,64,.12);color:#e88;}
+.mgr-empty{font-family:'Crimson Pro',serif;font-size:.88rem;color:rgba(255,255,255,.25);font-style:italic;text-align:center;padding:1.5rem 1rem;}
+
+/* checkbox selecionar tudo */
+.mgr-check-all-wrap{display:flex;align-items:center;}
+.mgr-check-all-wrap input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
 
 /* EDIÇÃO DE CATEGORIAS EM LOTE */
 .cat-edit-list{display:grid;gap:.4rem;margin-bottom:.7rem;}
@@ -475,26 +498,38 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
       <!-- Gerenciador de posts em lote -->
       <div class="mgr-panel">
-        <p class="mgr-panel-title">
-          <span>📋 Gerenciar Posts</span>
-          <button class="btn-slot" onclick="renderMgrList()" style="font-size:.56rem;">↺ Atualizar lista</button>
-        </p>
-        <div class="mgr-toolbar">
-          <label class="mgr-select-all">
-            <input type="checkbox" id="mgr-check-all" onchange="toggleSelectAll(this.checked)">
-            Selecionar todos
-          </label>
-          <span class="mgr-count" id="mgr-count">0 selecionados</span>
-          <div class="mgr-batch-actions">
-            <select class="mgr-cat-change" id="mgr-cat-target">
-              <option value="">Mover para categoria…</option>
-            </select>
-            <button class="btn-slot green" onclick="batchChangeCategory()">✔ Aplicar categoria</button>
-            <button class="btn-slot" style="background:rgba(184,64,64,.25);border-color:rgba(184,64,64,.4);" onclick="batchDelete()">🗑 Excluir selecionados</button>
-          </div>
+        <div class="mgr-panel-head">
+          <span class="mgr-panel-label">📋 Posts</span>
+          <button class="mgr-refresh" onclick="renderMgrList()">↺ Atualizar</button>
         </div>
-        <div class="mgr-list" id="mgr-list">
-          <p style="font-family:'Crimson Pro',serif;font-size:.85rem;color:rgba(255,255,255,.3);font-style:italic;text-align:center;padding:.8rem 0;">Clique em "Atualizar lista" para carregar os posts.</p>
+
+        <!-- barra de ações contextual (aparece ao selecionar) -->
+        <div class="mgr-action-bar" id="mgr-action-bar">
+          <span class="mgr-sel-count" id="mgr-sel-count">0</span>
+          <span style="font-family:'DM Sans',sans-serif;font-size:.72rem;color:rgba(255,255,255,.45);">selecionados</span>
+          <div class="mgr-action-sep"></div>
+          <select class="mgr-cat-select" id="mgr-cat-target">
+            <option value="">Mover para…</option>
+          </select>
+          <button class="mgr-act-btn" onclick="batchChangeCategory()">✔ Aplicar</button>
+          <div class="mgr-action-sep"></div>
+          <button class="mgr-act-btn danger" onclick="batchDelete()">🗑 Excluir</button>
+          <button class="mgr-deselect" onclick="toggleSelectAll(false)" title="Limpar seleção">✕</button>
+        </div>
+
+        <!-- cabeçalho da tabela -->
+        <div class="mgr-table-head">
+          <div class="mgr-check-all-wrap">
+            <input type="checkbox" id="mgr-check-all" onchange="toggleSelectAll(this.checked)">
+          </div>
+          <span class="mgr-th">Título</span>
+          <span class="mgr-th">Categoria</span>
+          <span class="mgr-th center">Data</span>
+          <span class="mgr-th"></span>
+        </div>
+
+        <div class="mgr-rows" id="mgr-list">
+          <p class="mgr-empty">Clique em Atualizar para carregar os posts.</p>
         </div>
       </div>
 
@@ -1015,7 +1050,7 @@ function initPosts() {
       _posts = posts;
       _usingFirebase = true; // confirma de novo quando o snapshot chega
       renderPostList();
-      if (document.getElementById("mgr-list")?.querySelector(".mgr-item")) renderMgrList();
+      if (document.getElementById("mgr-list")?.querySelector(".mgr-row")) renderMgrList();
     });
     _unsubPosts = unsub;
   } catch(e) {
@@ -1264,47 +1299,55 @@ async function submitComment() {
 // GERENCIADOR DE POSTS EM LOTE
 // ═══════════════════════════════════════════════
 function renderMgrList() {
-  const el = document.getElementById("mgr-list");
-  // atualiza select de categorias
-  const sel = document.getElementById("mgr-cat-target");
-  sel.innerHTML = `<option value="">Mover para categoria…</option>` +
+  const catSel = document.getElementById("mgr-cat-target");
+  catSel.innerHTML = `<option value="">Mover para…</option>` +
     _cats.map(c => `<option value="${c}">${c}</option>`).join("");
 
+  const el = document.getElementById("mgr-list");
+
   if (!_posts.length) {
-    el.innerHTML = '<p style="font-family:\'Crimson Pro\',serif;font-size:.85rem;color:rgba(255,255,255,.3);font-style:italic;text-align:center;padding:.8rem 0;">Nenhum post ainda.</p>';
+    el.innerHTML = '<p class="mgr-empty">Nenhum post ainda.</p>';
     return;
   }
 
   el.innerHTML = _posts.map(p => `
-    <div class="mgr-item" id="mgr-${p.id}">
-      <input type="checkbox" onchange="updateMgrCount();document.getElementById('mgr-${p.id}').classList.toggle('selected',this.checked)" data-pid="${p.id}">
-      <div class="mgr-item-info">
-        <div class="mgr-item-title">${p.title}</div>
-        <div class="mgr-item-meta">${p.date||""}</div>
-      </div>
-      <span class="mgr-item-cat">${p.category||"Geral"}</span>
-      <div class="mgr-item-actions">
-        <button class="mgr-edit-btn" onclick="editPostInSlot('${p.id}')">Editar</button>
-        <button class="mgr-del-btn" onclick="deletePost('${p.id}')">Excluir</button>
+    <div class="mgr-row" id="mgr-${escAttr(p.id)}">
+      <input type="checkbox" data-pid="${escAttr(p.id)}" onchange="onMgrCheck(this)">
+      <div class="mgr-row-title" title="${escAttr(p.title)}">${p.title}</div>
+      <div class="mgr-row-cat">${p.category||"Geral"}</div>
+      <div class="mgr-row-date">${p.date||""}</div>
+      <div class="mgr-row-acts">
+        <button class="mgr-row-edit" data-pid="${escAttr(p.id)}" onclick="editPostInSlot(this.dataset.pid)" title="Editar">✏️</button>
+        <button class="mgr-row-del"  data-pid="${escAttr(p.id)}" onclick="deletePost(this.dataset.pid)"    title="Excluir">🗑</button>
       </div>
     </div>`).join("");
 
   document.getElementById("mgr-check-all").checked = false;
-  updateMgrCount();
+  updateActionBar();
 }
 
-function updateMgrCount() {
-  const checked = document.querySelectorAll("#mgr-list input[type=checkbox]:checked").length;
-  document.getElementById("mgr-count").textContent = `${checked} selecionado(s)`;
+function onMgrCheck(cb) {
+  document.getElementById(`mgr-${cb.dataset.pid}`)?.classList.toggle("selected", cb.checked);
+  const all     = document.querySelectorAll("#mgr-list input[type=checkbox]");
+  const checked = document.querySelectorAll("#mgr-list input[type=checkbox]:checked");
+  document.getElementById("mgr-check-all").checked = all.length && checked.length === all.length;
+  updateActionBar();
+}
+
+function updateActionBar() {
+  const n   = document.querySelectorAll("#mgr-list input[type=checkbox]:checked").length;
+  const bar = document.getElementById("mgr-action-bar");
+  document.getElementById("mgr-sel-count").textContent = n;
+  n > 0 ? bar.classList.add("visible") : bar.classList.remove("visible");
 }
 
 function toggleSelectAll(checked) {
   document.querySelectorAll("#mgr-list input[type=checkbox]").forEach(cb => {
     cb.checked = checked;
-    const pid = cb.dataset.pid;
-    document.getElementById(`mgr-${pid}`)?.classList.toggle("selected", checked);
+    document.getElementById(`mgr-${cb.dataset.pid}`)?.classList.toggle("selected", checked);
   });
-  updateMgrCount();
+  document.getElementById("mgr-check-all").checked = checked;
+  updateActionBar();
 }
 
 function getSelectedPids() {
@@ -1314,8 +1357,8 @@ function getSelectedPids() {
 
 async function batchDelete() {
   const pids = getSelectedPids();
-  if (!pids.length) { showToast("Nenhum post selecionado.", true); return; }
-  if (!confirm(`Excluir ${pids.length} post(s)? Esta ação não pode ser desfeita.`)) return;
+  if (!pids.length) return;
+  if (!confirm(`Excluir ${pids.length} post(s)? Não dá pra desfazer.`)) return;
 
   if (_usingFirebase) {
     try {
@@ -1325,7 +1368,7 @@ async function batchDelete() {
   } else {
     _posts = _posts.filter(p => !pids.includes(p.id));
     renderPostList();
-    showToast(`${pids.length} post(s) removido(s) localmente.`);
+    showToast(`${pids.length} removido(s) localmente.`);
   }
   renderMgrList();
 }
@@ -1333,25 +1376,20 @@ async function batchDelete() {
 async function batchChangeCategory() {
   const pids = getSelectedPids();
   const cat  = document.getElementById("mgr-cat-target").value;
-  if (!pids.length) { showToast("Nenhum post selecionado.", true); return; }
-  if (!cat)         { showToast("Selecione uma categoria.", true); return; }
+  if (!pids.length) return;
+  if (!cat) { showToast("Selecione uma categoria.", true); return; }
 
   if (_usingFirebase) {
     try {
-      const toSave = pids.map(id => {
-        const p = _posts.find(x => x.id === id);
-        return p ? { ...p, category: cat } : null;
-      }).filter(Boolean);
+      const toSave = pids.map(id => _posts.find(x => x.id === id))
+        .filter(Boolean).map(p => ({ ...p, category: cat }));
       await window._savePosts(toSave);
-      showToast(`${pids.length} post(s) movido(s) para "${cat}".`);
+      showToast(`${pids.length} post(s) → "${cat}".`);
     } catch(e) { showToast("Erro ao atualizar.", true); return; }
   } else {
-    pids.forEach(id => {
-      const p = _posts.find(x => x.id === id);
-      if (p) p.category = cat;
-    });
+    pids.forEach(id => { const p = _posts.find(x => x.id === id); if (p) p.category = cat; });
     renderPostList();
-    showToast(`${pids.length} post(s) movido(s) para "${cat}" localmente.`);
+    showToast(`${pids.length} post(s) → "${cat}".`);
   }
   renderMgrList();
 }
