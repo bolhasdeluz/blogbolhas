@@ -214,8 +214,28 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-template{background:none;border:1px solid rgba(255,255,255,.15);border-radius:5px;color:rgba(255,255,255,.5);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;cursor:pointer;transition:border-color .16s,color .16s;}
 .btn-template:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75);}
 
-/* POSTS */
-#post-list{display:grid;gap:1.1rem;margin-top:2rem;}
+/* LAYOUT COM SIDEBAR */
+.list-layout{display:grid;grid-template-columns:1fr 260px;gap:2rem;margin-top:2rem;align-items:start;}
+#post-list{display:grid;gap:1.1rem;}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:1.4rem;}
+.sidebar-section{background:var(--surface);border-radius:12px;box-shadow:0 2px 16px rgba(180,60,90,.07);overflow:hidden;}
+.sidebar-section-head{background:linear-gradient(135deg,#fde8ed,#fce8ef);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;}
+.sidebar-cat-label{font-family:'Cinzel',serif;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);}
+.sidebar-see-all{font-family:'Cinzel',serif;font-size:.55rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);cursor:pointer;background:none;border:none;transition:color .14s;}
+.sidebar-see-all:hover{color:var(--gold);}
+.sidebar-post-list{display:flex;flex-direction:column;}
+.sidebar-post-item{padding:.65rem 1rem;border-top:1px solid var(--border);cursor:pointer;transition:background .14s;}
+.sidebar-post-item:first-child{border-top:none;}
+.sidebar-post-item:hover{background:var(--gold-dim);}
+.sidebar-post-title{font-family:'Playfair Display',serif;font-size:.85rem;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:.2rem;}
+.sidebar-post-date{font-size:.68rem;color:var(--text-dim);}
+
+@media(max-width:720px){
+  .list-layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+}
 .post-card{background:var(--surface);border-radius:12px;box-shadow:0 2px 16px rgba(180,60,90,.07);overflow:hidden;cursor:pointer;transition:transform .22s,box-shadow .22s;}
 .post-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(180,60,90,.13);}
 .post-card-top{background:linear-gradient(135deg,#fde8ed,#fce8ef);padding:.65rem 1.1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
@@ -421,7 +441,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div><!-- /admin-panel-inner -->
     </div>
 
-    <div id="post-list"><div class="spinner"></div></div>
+    <div class="list-layout">
+      <div id="post-list"><div class="spinner"></div></div>
+      <aside class="sidebar" id="sidebar"></aside>
+    </div>
   </div>
 
   <div id="post-view">
@@ -909,8 +932,8 @@ function renderPostList() {
     el.innerHTML = '<p class="empty-state">Nenhum post nesta categoria ainda. 🌙</p>';
     return;
   }
-  el.innerHTML = list.map(p => `
-    <div class="post-card" onclick="openPost('${p.id}')">
+  el.innerHTML = list.map((p, i) => `
+    <div class="post-card" data-pid="${escAttr(p.id)}">
       <div class="post-card-top">
         <span class="cat-badge">${p.category||"Geral"}</span>
         <span class="post-author-badge">✍️ ${p.author||AUTHOR_NAME}</span>
@@ -924,13 +947,61 @@ function renderPostList() {
         <span class="comment-count">💬 comentários</span>
         <div style="display:flex;align-items:center;gap:.6rem;">
           ${_isAdmin ? `<div class="admin-post-btns">
-            <button class="btn-edit-post" onclick="event.stopPropagation();editPostInSlot('${p.id}')">Editar</button>
-            <button class="btn-del-post" onclick="event.stopPropagation();deletePost('${p.id}')">Excluir</button>
+            <button class="btn-edit-post" data-action="edit" data-pid="${escAttr(p.id)}">Editar</button>
+            <button class="btn-del-post"  data-action="del"  data-pid="${escAttr(p.id)}">Excluir</button>
           </div>` : ""}
           <span class="read-more">Ler mais →</span>
         </div>
       </div>
     </div>`).join("");
+
+  // delegação de eventos — sem onclick inline, evita problemas com IDs especiais
+  el.onclick = (e) => {
+    const delBtn  = e.target.closest("[data-action='del']");
+    const editBtn = e.target.closest("[data-action='edit']");
+    const card    = e.target.closest(".post-card");
+    if (delBtn)  { e.stopPropagation(); deletePost(delBtn.dataset.pid); return; }
+    if (editBtn) { e.stopPropagation(); editPostInSlot(editBtn.dataset.pid); return; }
+    if (card)    { openPost(card.dataset.pid); }
+  };
+
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+
+  // agrupa posts por categoria, máx 3 cada
+  const byCat = {};
+  _posts.forEach(p => {
+    const cat = p.category || "Geral";
+    if (!byCat[cat]) byCat[cat] = [];
+    if (byCat[cat].length < 3) byCat[cat].push(p);
+  });
+
+  if (!Object.keys(byCat).length) { sidebar.innerHTML = ""; return; }
+
+  sidebar.innerHTML = Object.entries(byCat).map(([cat, posts]) => `
+    <div class="sidebar-section">
+      <div class="sidebar-section-head">
+        <span class="sidebar-cat-label">${cat}</span>
+        <button class="sidebar-see-all" onclick="filterCat(${JSON.stringify(cat)})">Ver todos →</button>
+      </div>
+      <div class="sidebar-post-list">
+        ${posts.map(p => `
+          <div class="sidebar-post-item" data-sid="${escAttr(p.id)}">
+            <div class="sidebar-post-title">${p.title}</div>
+            <div class="sidebar-post-date">${p.date||""}</div>
+          </div>`).join("")}
+      </div>
+    </div>`).join("");
+
+  // delegação de eventos da sidebar
+  sidebar.onclick = (e) => {
+    const item = e.target.closest(".sidebar-post-item");
+    if (item) openPost(item.dataset.sid);
+  };
 }
 
 function editPostInSlot(id) {
