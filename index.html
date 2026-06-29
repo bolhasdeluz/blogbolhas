@@ -20,33 +20,63 @@
     storageBucket:"COLE_AQUI", messagingSenderId:"COLE_AQUI", appId:"COLE_AQUI"
   };
 
-  const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
-  const provider=new GoogleAuthProvider();
+  let _fbReady = false;
+  let app, auth, db;
 
-  window._fbSignIn  = ()=>signInWithPopup(auth,provider).catch(console.error);
-  window._fbSignOut = ()=>signOut(auth);
-  onAuthStateChanged(auth,user=>{ window._currentUser=user||null; document.dispatchEvent(new CustomEvent("authChanged",{detail:user})); });
+  try {
+    app  = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db   = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-  window._loadComments=(postId,cb)=>{
-    const q=query(collection(db,"comments"),where("postId","==",postId),orderBy("createdAt","asc"));
-    return onSnapshot(q,snap=>cb(snap.docs.map(d=>({id:d.id,...d.data()}))));
-  };
-  window._addComment=async(postId,text)=>{
-    const u=window._currentUser; if(!u)return;
-    await addDoc(collection(db,"comments"),{postId,text,authorName:u.displayName,authorPhoto:u.photoURL,authorUid:u.uid,createdAt:serverTimestamp()});
-  };
-  window._savePosts=async(posts)=>{ for(const p of posts) await setDoc(doc(db,"posts",p.id),p); };
-  window._deletePost=async(id)=>deleteDoc(doc(db,"posts",id));
-  window._loadPosts=(cb)=>{
-    const q=query(collection(db,"posts"),orderBy("dateSort","desc"));
-    return onSnapshot(q,snap=>cb(snap.docs.map(d=>({id:d.id,...d.data()}))));
-  };
-  window._saveCategories=async(cats)=>setDoc(doc(db,"config","categories"),{list:cats});
-  window._loadCategories=async()=>{
-    const snap=await getDocs(collection(db,"config"));
-    const d=snap.docs.find(d=>d.id==="categories");
-    return d?d.data().list:null;
-  };
+    window._fbSignIn  = () => signInWithPopup(auth, provider).catch(console.error);
+    window._fbSignOut = () => signOut(auth);
+
+    onAuthStateChanged(auth, user => {
+      window._currentUser = user || null;
+      document.dispatchEvent(new CustomEvent("authChanged", { detail: user }));
+    });
+
+    window._loadComments = (postId, cb) => {
+      const q = query(collection(db,"comments"), where("postId","==",postId), orderBy("createdAt","asc"));
+      return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id:d.id, ...d.data() }))));
+    };
+    window._addComment = async (postId, text) => {
+      const u = window._currentUser; if (!u) return;
+      await addDoc(collection(db,"comments"), {
+        postId, text, authorName:u.displayName,
+        authorPhoto:u.photoURL, authorUid:u.uid, createdAt:serverTimestamp()
+      });
+    };
+    window._savePosts = async (posts) => {
+      for (const p of posts) await setDoc(doc(db,"posts",p.id), p);
+    };
+    window._deletePost = async (id) => deleteDoc(doc(db,"posts",id));
+    window._loadPosts  = (cb) => {
+      const q = query(collection(db,"posts"), orderBy("dateSort","desc"));
+      return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id:d.id, ...d.data() }))));
+    };
+    window._saveCategories = async (cats) => setDoc(doc(db,"config","categories"), { list:cats });
+    window._loadCategories = async () => {
+      const snap = await getDocs(collection(db,"config"));
+      const d = snap.docs.find(d => d.id === "categories");
+      return d ? d.data().list : null;
+    };
+    _fbReady = true;
+  } catch(e) {
+    // Firebase não configurado — modo local ativo
+    window._fbSignIn  = () => {};
+    window._fbSignOut = () => {};
+    window._loadComments  = () => () => {};
+    window._addComment    = async () => {};
+    window._savePosts     = async () => { throw new Error("no-firebase"); };
+    window._deletePost    = async () => { throw new Error("no-firebase"); };
+    window._loadPosts     = () => () => {};
+    window._saveCategories= async () => { throw new Error("no-firebase"); };
+    window._loadCategories= async () => null;
+  }
+
+  window._fbReady = _fbReady;
 </script>
 
 <style>
@@ -60,7 +90,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;}
 
-/* HEADER */
 .site-header{background:linear-gradient(135deg,#c0405a,#d4607a 60%,#e07a90);box-shadow:0 2px 20px rgba(180,60,90,.25);position:sticky;top:0;z-index:200;padding:0 1.25rem;}
 .header-inner{max-width:960px;margin:0 auto;height:54px;display:flex;align-items:center;gap:.75rem;}
 .site-logo{font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.92);display:flex;align-items:center;gap:.4rem;flex-shrink:0;cursor:pointer;background:none;border:none;}
@@ -76,144 +105,77 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-pill.active{background:rgba(255,255,255,.9);color:var(--gold);}
 .user-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6);flex-shrink:0;}
 
-/* LAYOUT */
 .main-wrap{max-width:960px;margin:0 auto;padding:2rem 1.25rem 5rem;}
 
-/* HERO */
 .blog-hero{background:linear-gradient(135deg,#fde8ed,#fce8ef);border-bottom:1px solid var(--border);padding:2.2rem 1.25rem 1.8rem;text-align:center;margin:-2rem -1.25rem 0;}
 .hero-eyebrow{font-family:'Cinzel',serif;font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;}
 .hero-title{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:600;color:var(--text);line-height:1.2;margin-bottom:.5rem;}
 .hero-sub{font-family:'Crimson Pro',serif;font-size:.98rem;color:var(--text-dim);font-style:italic;}
 
-/* ═══════════════════════════════
-   ÁREA DE REDAÇÃO RÁPIDA (admin)
-═══════════════════════════════ */
-#quick-compose{
-  background:linear-gradient(135deg,#2a1a22,#3d2232);
-  border-radius:0 0 16px 16px;
-  margin:0 -1.25rem 2rem;
-  padding:1.4rem 1.25rem;
-}
-.qc-header{
-  display:flex;align-items:center;justify-content:space-between;gap:1rem;
-  margin-bottom:1.2rem;flex-wrap:wrap;
-}
-.qc-title{
-  font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;
-  letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);
-  display:flex;align-items:center;gap:.5rem;
-}
+#quick-compose{background:linear-gradient(135deg,#2a1a22,#3d2232);border-radius:0 0 16px 16px;margin:0 -1.25rem 2rem;padding:1.4rem 1.25rem;}
+.qc-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.qc-title{font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:.5rem;}
 .qc-title span{color:var(--gold-light);}
 .qc-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
 
-/* Slots de post */
 #slots-container{display:grid;gap:1rem;}
-
-.slot{
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(196,57,107,.25);
-  border-radius:12px;
-  overflow:hidden;
-  animation:fadeIn .25s ease both;
-}
-.slot-head{
-  background:rgba(196,57,107,.15);
-  padding:.65rem 1rem;
-  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
-}
-.slot-num{
-  font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;
-  letter-spacing:.12em;color:rgba(255,255,255,.5);text-transform:uppercase;
-}
+.slot{background:rgba(255,255,255,.06);border:1px solid rgba(196,57,107,.25);border-radius:12px;overflow:hidden;animation:fadeIn .25s ease both;}
+.slot-head{background:rgba(196,57,107,.15);padding:.65rem 1rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+.slot-num{font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.5);text-transform:uppercase;}
 .slot-head-fields{display:flex;gap:.5rem;flex:1;flex-wrap:wrap;}
-.slot-input-sm{
-  background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);
-  border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;
-  padding:5px 9px;outline:none;transition:border-color .16s;
-}
+.slot-input-sm{background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;padding:5px 9px;outline:none;transition:border-color .16s;}
 .slot-input-sm::placeholder{color:rgba(255,255,255,.35);}
 .slot-input-sm:focus{border-color:var(--gold-light);}
 .slot-input-sm.title-field{flex:1;min-width:160px;}
-.slot-select{
-  background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);
-  border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;
-  padding:5px 8px;outline:none;cursor:pointer;
-}
+.slot-select{background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;padding:5px 8px;outline:none;cursor:pointer;}
 .slot-select option{background:#3d2232;color:#fff;}
 .slot-date{width:130px;}
 .slot-remove{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;flex-shrink:0;transition:color .16s;}
 .slot-remove:hover{color:var(--red);}
-
-.slot-body{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:0;
-}
-.slot-col{
-  padding:.9rem 1rem;
-  display:flex;flex-direction:column;gap:.5rem;
-}
+.slot-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.slot-col{padding:.9rem 1rem;display:flex;flex-direction:column;gap:.5rem;}
 .slot-col:first-child{border-right:1px solid rgba(196,57,107,.15);}
-.slot-col-label{
-  font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;
-  letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);
-}
-.slot-textarea{
-  flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(196,57,107,.15);
-  border-radius:6px;color:rgba(255,255,255,.88);
-  font-family:'Crimson Pro',serif;font-size:.93rem;
-  padding:8px 10px;resize:vertical;min-height:110px;outline:none;
-  line-height:1.55;transition:border-color .16s;
-}
+.slot-col-label{font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.slot-textarea{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(196,57,107,.15);border-radius:6px;color:rgba(255,255,255,.88);font-family:'Crimson Pro',serif;font-size:.93rem;padding:8px 10px;resize:vertical;min-height:110px;outline:none;line-height:1.55;transition:border-color .16s;}
 .slot-textarea:focus{border-color:rgba(196,57,107,.5);}
 .slot-textarea.raw{font-style:italic;color:rgba(255,255,255,.6);}
-.slot-textarea.resume{color:rgba(255,255,255,.88);}
 .slot-col-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;}
 
-/* Botões dentro do slot */
-.btn-slot{
-  background:rgba(196,57,107,.25);border:1px solid rgba(196,57,107,.35);
-  border-radius:5px;color:rgba(255,255,255,.85);
-  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;font-weight:700;
-  text-transform:uppercase;padding:5px 11px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:.3rem;transition:background .16s;
-}
+.btn-slot{background:rgba(196,57,107,.25);border:1px solid rgba(196,57,107,.35);border-radius:5px;color:rgba(255,255,255,.85);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;font-weight:700;text-transform:uppercase;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;transition:background .16s;}
 .btn-slot:hover{background:rgba(196,57,107,.4);}
 .btn-slot:disabled{opacity:.4;cursor:not-allowed;}
 .btn-slot.green{background:rgba(42,122,96,.3);border-color:rgba(42,122,96,.4);}
 .btn-slot.green:hover{background:rgba(42,122,96,.45);}
 .slot-spinner{display:none;width:13px;height:13px;border:2px solid rgba(255,255,255,.15);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:spin .7s linear infinite;}
 
-/* Botão publicar lote */
-.btn-publish-batch{
-  background:linear-gradient(135deg,var(--gold),var(--gold-light));
-  border:none;border-radius:8px;color:#fff;
-  font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  padding:10px 24px;cursor:pointer;transition:opacity .16s,transform .1s;
-  display:inline-flex;align-items:center;gap:.45rem;
-}
+.btn-publish-batch{background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 24px;cursor:pointer;transition:opacity .16s,transform .1s;display:inline-flex;align-items:center;gap:.45rem;}
 .btn-publish-batch:hover{opacity:.9;}
 .btn-publish-batch:active{transform:scale(.97);}
 .btn-publish-batch:disabled{opacity:.4;cursor:not-allowed;}
-
-.btn-add-slot{
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-  border-radius:8px;color:rgba(255,255,255,.7);
-  font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  padding:8px 18px;cursor:pointer;transition:background .16s;
-  display:inline-flex;align-items:center;gap:.4rem;
-}
+.btn-add-slot{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:8px 18px;cursor:pointer;transition:background .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .btn-add-slot:hover{background:rgba(255,255,255,.14);}
 
-/* ═══════════════════════════════
-   GRID DE POSTS
-═══════════════════════════════ */
+/* IMPORTAÇÃO */
+.import-panel{background:rgba(255,255,255,.04);border:1px dashed rgba(196,57,107,.3);border-radius:10px;padding:1rem 1.1rem;margin-top:.9rem;}
+.import-panel-title{font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem;}
+.import-drop-zone{border:2px dashed rgba(196,57,107,.3);border-radius:8px;padding:1.4rem 1rem;text-align:center;cursor:pointer;transition:border-color .16s,background .16s;position:relative;}
+.import-drop-zone:hover,.import-drop-zone.drag-over{border-color:rgba(196,57,107,.7);background:rgba(196,57,107,.06);}
+.import-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.import-drop-icon{font-size:1.6rem;margin-bottom:.4rem;}
+.import-drop-label{font-family:'DM Sans',sans-serif;font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.5;}
+.import-drop-label strong{color:rgba(255,255,255,.8);}
+.import-drop-hint{font-family:'Crimson Pro',serif;font-size:.78rem;color:rgba(255,255,255,.35);font-style:italic;margin-top:.25rem;}
+.import-template-row{display:flex;align-items:center;justify-content:space-between;margin-top:.65rem;flex-wrap:wrap;gap:.4rem;}
+.btn-template{background:none;border:1px solid rgba(255,255,255,.15);border-radius:5px;color:rgba(255,255,255,.5);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;cursor:pointer;transition:border-color .16s,color .16s;}
+.btn-template:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75);}
+
+/* POSTS */
 #post-list{display:grid;gap:1.1rem;margin-top:2rem;}
 .post-card{background:var(--surface);border-radius:12px;box-shadow:0 2px 16px rgba(180,60,90,.07);overflow:hidden;cursor:pointer;transition:transform .22s,box-shadow .22s;}
 .post-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(180,60,90,.13);}
 .post-card-top{background:linear-gradient(135deg,#fde8ed,#fce8ef);padding:.65rem 1.1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
 .cat-badge{background:#fce8ef;color:#d4607a;border-radius:20px;font-family:'Cinzel',serif;font-size:.62rem;font-weight:500;letter-spacing:.04em;padding:2px 9px;text-transform:uppercase;}
-.post-author-badge{font-size:.7rem;color:var(--text-dim);display:flex;align-items:center;gap:.3rem;}
+.post-author-badge{font-size:.7rem;color:var(--text-dim);}
 .post-date{font-size:.72rem;color:var(--text-dim);margin-left:auto;}
 .post-card-body{padding:1rem 1.2rem 1.1rem;}
 .post-card-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.35rem;line-height:1.35;}
@@ -228,7 +190,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-del-post:hover{background:var(--red-dim);}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text-dim);font-family:'Crimson Pro',serif;font-style:italic;}
 
-/* CATEGORIAS admin panel */
+/* CATEGORIAS */
 .cat-panel{background:rgba(255,255,255,.06);border:1px solid rgba(196,57,107,.2);border-radius:8px;padding:.9rem 1rem;margin-top:.8rem;}
 .cat-panel-title{font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.6rem;}
 .cat-list-admin{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;}
@@ -238,7 +200,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .cat-chip-rm:hover{color:var(--red);}
 .cat-add-row{display:flex;gap:.4rem;}
 
-/* POST FULL VIEW */
+/* POST FULL */
 #post-view{display:none;}
 .back-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;padding:7px 14px;cursor:pointer;margin-bottom:1.5rem;transition:border-color .16s,color .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .back-btn:hover{border-color:var(--gold);color:var(--gold);}
@@ -280,104 +242,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .comment-text{font-family:'Crimson Pro',serif;font-size:.93rem;line-height:1.52;}
 .comments-empty{font-family:'Crimson Pro',serif;font-size:.9rem;color:var(--text-dim);font-style:italic;text-align:center;padding:1rem 0;}
 
-/* ═══════════════════════════════
-   IMPORTAÇÃO EM LOTE
-═══════════════════════════════ */
-.import-panel{
-  background:rgba(255,255,255,.04);
-  border:1px dashed rgba(196,57,107,.3);
-  border-radius:10px;
-  padding:1rem 1.1rem;
-  margin-top:.9rem;
-}
-.import-panel-title{
-  font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;
-  letter-spacing:.14em;text-transform:uppercase;
-  color:rgba(255,255,255,.45);margin-bottom:.7rem;
-  display:flex;align-items:center;gap:.5rem;
-}
-.import-drop-zone{
-  border:2px dashed rgba(196,57,107,.3);
-  border-radius:8px;padding:1.4rem 1rem;
-  text-align:center;cursor:pointer;
-  transition:border-color .16s,background .16s;
-  position:relative;
-}
-.import-drop-zone:hover,.import-drop-zone.drag-over{
-  border-color:rgba(196,57,107,.7);
-  background:rgba(196,57,107,.06);
-}
-.import-drop-zone input[type=file]{
-  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
-}
-.import-drop-icon{font-size:1.6rem;margin-bottom:.4rem;}
-.import-drop-label{
-  font-family:'DM Sans',sans-serif;font-size:.82rem;
-  color:rgba(255,255,255,.55);line-height:1.5;
-}
-.import-drop-label strong{color:rgba(255,255,255,.8);}
-.import-drop-hint{
-  font-family:'Crimson Pro',serif;font-size:.78rem;
-  color:rgba(255,255,255,.35);font-style:italic;margin-top:.25rem;
-}
-
-/* Template download link */
-.import-template-row{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-top:.65rem;flex-wrap:wrap;gap:.4rem;
-}
-.btn-template{
-  background:none;border:1px solid rgba(255,255,255,.15);
-  border-radius:5px;color:rgba(255,255,255,.5);
-  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;
-  text-transform:uppercase;padding:5px 12px;cursor:pointer;
-  transition:border-color .16s,color .16s;
-}
-.btn-template:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75);}
-
-/* Preview da importação */
-#import-preview{margin-top:.9rem;display:none;}
-.import-preview-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem;
-}
-.import-preview-count{
-  font-family:'Cinzel',serif;font-size:.6rem;font-weight:600;
-  letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);
-}
-.import-table-wrap{
-  overflow-x:auto;border-radius:6px;
-  border:1px solid rgba(196,57,107,.2);
-  max-height:240px;overflow-y:auto;
-}
-.import-table{
-  width:100%;border-collapse:collapse;
-  font-family:'DM Sans',sans-serif;font-size:.78rem;
-  color:rgba(255,255,255,.8);
-}
-.import-table th{
-  background:rgba(196,57,107,.2);
-  padding:6px 10px;text-align:left;
-  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;
-  text-transform:uppercase;color:rgba(255,255,255,.6);
-  position:sticky;top:0;white-space:nowrap;
-}
-.import-table td{
-  padding:5px 10px;border-top:1px solid rgba(196,57,107,.1);
-  vertical-align:top;max-width:200px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.import-table tr:hover td{background:rgba(196,57,107,.07);}
-.import-row-ok td:first-child::before{content:"✓ ";color:#3a9a78;}
-.import-row-warn td:first-child::before{content:"⚠ ";color:#c8a000;}
-.import-warn-msg{
-  font-size:.7rem;color:#c8a000;
-  font-family:'Crimson Pro',serif;font-style:italic;
-  margin-top:.4rem;
-}
-.import-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;}
-
-/* MISC */
 .toast{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(20px);background:#fff;border:1px solid var(--gold);color:var(--gold);border-radius:7px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;box-shadow:0 4px 20px rgba(196,57,107,.15);padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.error{border-color:var(--red);color:var(--red);}
@@ -387,7 +251,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
-
 @media(max-width:640px){
   .slot-body{grid-template-columns:1fr;}
   .slot-col:first-child{border-right:none;border-bottom:1px solid rgba(196,57,107,.15);}
@@ -412,7 +275,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 </header>
 
 <main class="main-wrap">
-
   <div id="list-view">
     <div class="blog-hero">
       <p class="hero-eyebrow">Terreiro Bolhas de Luz · Porto Alegre</p>
@@ -444,17 +306,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
       <div class="import-panel">
         <p class="import-panel-title">📥 Importação em Lote (Excel / CSV)</p>
-        <div class="import-drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file').click()">
-          <input type="file" id="import-file" accept=".xlsx, .xls, .csv" onchange="handleImportFile(event)">
+        <div class="import-drop-zone" id="import-drop-zone">
+          <input type="file" id="import-file" accept=".xlsx,.xls,.csv" onchange="handleImportFile(event)">
           <div class="import-drop-icon">📄</div>
           <p class="import-drop-label">Arraste sua planilha aqui ou <strong>clique para selecionar</strong></p>
           <p class="import-drop-hint">Formatos suportados: .xlsx, .csv</p>
         </div>
         <div class="import-template-row">
           <span class="import-drop-hint" style="margin:0;">Precisa do formato correto?</span>
-          <button class="btn-template" onclick="downloadTemplate()">Baixar Planilha Modelo</button>
+          <button class="btn-template" onclick="downloadTemplate()">⬇ Baixar Planilha Modelo</button>
         </div>
       </div>
+
       <div id="slots-container" style="margin-top:1rem;"></div>
     </div>
 
@@ -496,7 +359,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div id="comments-list"></div>
     </section>
   </div>
-
 </main>
 
 <div class="toast" id="toast"></div>
@@ -505,11 +367,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 // ═══════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════
-const ADMIN_PASSWORD = "terreiro"; // ← troque aqui
+const ADMIN_PASSWORD = "bolhasdeluz2026"; // ← troque aqui
 const AUTHOR_NAME    = "Mãe Anna";
 
 // ═══════════════════════════════════════════════
-// STATE
+// STATE — _posts é a fonte de verdade local
 // ═══════════════════════════════════════════════
 let _posts      = [];
 let _cats       = ["Notícias","Fundamentos","História","Reflexões"];
@@ -519,15 +381,16 @@ let _unsubPosts = null;
 let _unsubComm  = null;
 let _isAdmin    = false;
 let _slotCount  = 0;
+let _usingFirebase = false; // true quando Firebase estiver configurado e respondendo
 
 // ═══════════════════════════════════════════════
 // VIEWS
 // ═══════════════════════════════════════════════
 function showView(v) {
-  document.getElementById("list-view").style.display  = v==="list"  ? "" : "none";
-  document.getElementById("post-view").style.display  = v==="post"  ? "" : "none";
+  document.getElementById("list-view").style.display = v === "list" ? "" : "none";
+  document.getElementById("post-view").style.display = v === "post" ? "" : "none";
   if (v !== "post" && _unsubComm) { _unsubComm(); _unsubComm = null; }
-  if (v === "list") window.scrollTo({top:0,behavior:"smooth"});
+  if (v === "list") window.scrollTo({ top:0, behavior:"smooth" });
 }
 
 // ═══════════════════════════════════════════════
@@ -552,7 +415,7 @@ function updateHeaderAuth() {
     el.innerHTML = `
       ${user ? `<img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">` : ""}
       <span class="btn-pill active">Admin</span>
-      <button class="btn-pill" onclick="window._fbSignOut?.(); _isAdmin=false; document.getElementById('quick-compose').style.display='none'; updateHeaderAuth();">Sair</button>`;
+      <button class="btn-pill" onclick="_isAdmin=false;document.getElementById('quick-compose').style.display='none';updateHeaderAuth();">Sair</button>`;
   } else if (user) {
     el.innerHTML = `
       <img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">
@@ -567,16 +430,16 @@ function updateHeaderAuth() {
 }
 
 function updateCommentUI() {
-  const user  = window._currentUser;
-  const gate  = document.getElementById("comment-auth-gate");
-  const form  = document.getElementById("comment-form-wrap");
-  if (!gate||!form) return;
+  const user = window._currentUser;
+  const gate = document.getElementById("comment-auth-gate");
+  const form = document.getElementById("comment-form-wrap");
+  if (!gate || !form) return;
   if (user) {
-    gate.style.display="none"; form.style.display="";
+    gate.style.display = "none"; form.style.display = "";
     document.getElementById("form-user-avatar").src = user.photoURL;
     document.getElementById("form-user-name").textContent = user.displayName;
   } else {
-    gate.style.display=""; form.style.display="none";
+    gate.style.display = ""; form.style.display = "none";
   }
 }
 
@@ -584,50 +447,53 @@ function updateCommentUI() {
 // CATEGORIAS
 // ═══════════════════════════════════════════════
 function renderCatMenu() {
-  // Header
   document.getElementById("header-cats").innerHTML =
     `<button class="cat-pill ${_filter==='todas'?'active':''}" onclick="filterCat('todas')">Todas</button>` +
-    _cats.map(c=>`<button class="cat-pill ${_filter===c?'active':''}" onclick="filterCat(${JSON.stringify(c)})">${c}</button>`).join("");
+    _cats.map(c => `<button class="cat-pill ${_filter===c?'active':''}" onclick="filterCat(${JSON.stringify(c)})">${c}</button>`).join("");
 
-  // Mobile
   const sel = document.getElementById("mobile-cat-select");
-  sel.innerHTML = `<option value="todas">Todas</option>` + _cats.map(c=>`<option value="${c}" ${_filter===c?"selected":""}>${c}</option>`).join("");
+  sel.innerHTML = `<option value="todas">Todas</option>` +
+    _cats.map(c => `<option value="${c}" ${_filter===c?"selected":""}>${c}</option>`).join("");
 
-  // Admin chips
   const cl = document.getElementById("cat-list-admin");
-  if (cl) cl.innerHTML = _cats.map((c,i)=>`
+  if (cl) cl.innerHTML = _cats.map((c,i) => `
     <div class="cat-chip">
       <span>${c}</span>
       <button class="cat-chip-rm" onclick="removeCategory(${i})">×</button>
     </div>`).join("");
 
-  // Selects nos slots
-  document.querySelectorAll(".slot-cat-select").forEach(sel=>{
-    const cur = sel.value;
-    sel.innerHTML = _cats.map(c=>`<option ${c===cur?"selected":""}>${c}</option>`).join("");
+  document.querySelectorAll(".slot-cat-select").forEach(s => {
+    const cur = s.value;
+    s.innerHTML = _cats.map(c => `<option ${c===cur?"selected":""}>${c}</option>`).join("");
   });
 }
 
-function filterCat(cat) { _filter=cat; renderCatMenu(); renderPostList(); }
+function filterCat(cat) { _filter = cat; renderCatMenu(); renderPostList(); }
+
 function addCategory() {
   const inp = document.getElementById("cat-new-input");
-  const v = (inp.value||"").trim();
+  const v = (inp.value || "").trim();
   if (!v || _cats.includes(v)) return;
-  _cats.push(v); inp.value=""; renderCatMenu();
+  _cats.push(v); inp.value = ""; renderCatMenu();
 }
+
 function removeCategory(i) { _cats.splice(i,1); renderCatMenu(); }
+
 async function saveCategories() {
-  try { await window._saveCategories(_cats); showToast("Categorias salvas! ✨"); }
-  catch(e) { showToast("Firebase não configurado — salvo localmente.", false); }
+  try {
+    await window._saveCategories(_cats);
+    showToast("Categorias salvas! ✨");
+  } catch(e) {
+    showToast("Salvo localmente (configure Firebase para persistir).");
+  }
 }
 
 // ═══════════════════════════════════════════════
-// SLOTS DE REDAÇÃO RÁPIDA
+// SLOTS
 // ═══════════════════════════════════════════════
-function addSlot(data={}) {
+function addSlot(data = {}) {
   _slotCount++;
-  const id  = `slot-${_slotCount}`;
-  const sid = _slotCount;
+  const id    = `slot-${_slotCount}`;
   const today = new Date().toISOString().slice(0,10);
 
   const wrap = document.createElement("div");
@@ -635,17 +501,17 @@ function addSlot(data={}) {
   wrap.id = id;
   wrap.innerHTML = `
     <div class="slot-head">
-      <span class="slot-num">#${sid}</span>
+      <span class="slot-num">#${_slotCount}</span>
       <div class="slot-head-fields">
         <input type="text" class="slot-input-sm title-field" id="${id}-title"
-          placeholder="Título do post…" value="${escAttr(data.title||'')}"
-          oninput="autoSlugSlot('${id}')">
+          placeholder="Título do post…" value="${escAttr(data.title||'')}">
         <select class="slot-select slot-cat-select" id="${id}-cat">
           ${_cats.map(c=>`<option ${c===(data.category||_cats[0])?"selected":""}>${c}</option>`).join("")}
         </select>
-        <input type="date" class="slot-input-sm slot-date" id="${id}-date" value="${data.date||today}">
+        <input type="date" class="slot-input-sm slot-date" id="${id}-date"
+          value="${escAttr(data.date||today)}">
       </div>
-      <button class="slot-remove" onclick="removeSlot('${id}')" title="Remover">✕</button>
+      <button class="slot-remove" onclick="removeSlot('${id}')">✕</button>
     </div>
     <div class="slot-body">
       <div class="slot-col">
@@ -654,19 +520,17 @@ function addSlot(data={}) {
           placeholder="Cole aqui o texto do WhatsApp, outro blog, rascunho…">${escAttr(data.raw||'')}</textarea>
         <div class="slot-col-actions">
           <button class="btn-slot" id="${id}-btn-fmt" onclick="slotFormat('${id}')">
-            <span id="${id}-spin-fmt" class="slot-spinner"></span>
-            ✨ Formatar
+            <span id="${id}-spin-fmt" class="slot-spinner"></span>✨ Formatar
           </button>
           <button class="btn-slot green" id="${id}-btn-exc" onclick="slotExcerpt('${id}')">
-            <span id="${id}-spin-exc" class="slot-spinner"></span>
-            📝 Resumo
+            <span id="${id}-spin-exc" class="slot-spinner"></span>📝 Resumo
           </button>
         </div>
       </div>
       <div class="slot-col">
-        <span class="slot-col-label">✅ Resumo editável (excerpt)</span>
-        <textarea class="slot-textarea resume" id="${id}-excerpt"
-          placeholder="O resumo gerado pela IA aparece aqui — edite à vontade antes de publicar.">${escAttr(data.excerpt||'')}</textarea>
+        <span class="slot-col-label">✅ Resumo (excerpt)</span>
+        <textarea class="slot-textarea" id="${id}-excerpt"
+          placeholder="Resumo gerado pela IA — edite antes de publicar.">${escAttr(data.excerpt||'')}</textarea>
         <div style="margin-top:.4rem;">
           <span class="slot-col-label" style="display:block;margin-bottom:.35rem;">Corpo formatado (HTML)</span>
           <textarea class="slot-textarea" id="${id}-body" style="min-height:80px;font-size:.82rem;"
@@ -678,12 +542,7 @@ function addSlot(data={}) {
 }
 
 function removeSlot(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-function autoSlugSlot(id) {
-  // só para referência interna, slug gerado no publish
+  document.getElementById(id)?.remove();
 }
 
 // ─── IA por slot ──────────────────────────────
@@ -692,28 +551,25 @@ async function slotFormat(id) {
   if (!raw) { showToast("Cole o texto bruto primeiro.", true); return; }
   const btn = document.getElementById(`${id}-btn-fmt`);
   const spin = document.getElementById(`${id}-spin-fmt`);
-  btn.disabled=true; spin.style.display="inline-block";
+  btn.disabled = true; spin.style.display = "inline-block";
   try {
     const html = await callAI(
-      `Você é editora do blog espiritual "Terreiro Bolhas de Luz" (Umbanda e Quimbanda, Porto Alegre, RS).
-Transforme o texto bruto em HTML limpo para o blog.
-REGRAS: use apenas <p> <h2> <h3> <blockquote> <em> <strong>. Preserve a voz da autora. Corrija erros discretamente. Falas de entidades em <blockquote>. Retorne SOMENTE o HTML, sem explicações, sem markdown.`,
+      `Você é editora do blog espiritual "Terreiro Bolhas de Luz" (Umbanda e Quimbanda, Porto Alegre, RS). Transforme o texto bruto em HTML limpo para o blog. REGRAS: use apenas <p> <h2> <h3> <blockquote> <em> <strong>. Preserve a voz da autora. Corrija erros discretamente. Falas de entidades em <blockquote>. Retorne SOMENTE o HTML, sem explicações, sem markdown.`,
       `Texto bruto:\n\n${raw}`
     );
     document.getElementById(`${id}-body`).value = html;
     showToast("Formatado! ✨");
   } catch(e) { showToast("Erro na API.", true); }
-  btn.disabled=false; spin.style.display="none";
+  btn.disabled = false; spin.style.display = "none";
 }
 
 async function slotExcerpt(id) {
-  const raw  = document.getElementById(`${id}-raw`).value.trim();
-  const body = document.getElementById(`${id}-body`).value.trim();
-  const src  = body || raw;
+  const src = document.getElementById(`${id}-body`).value.trim()
+    || document.getElementById(`${id}-raw`).value.trim();
   if (!src) { showToast("Formate o texto primeiro.", true); return; }
-  const btn  = document.getElementById(`${id}-btn-exc`);
+  const btn = document.getElementById(`${id}-btn-exc`);
   const spin = document.getElementById(`${id}-spin-exc`);
-  btn.disabled=true; spin.style.display="inline-block";
+  btn.disabled = true; spin.style.display = "inline-block";
   try {
     const text = await callAI(
       `Escreva um resumo curto (2-3 frases, máx 280 caracteres) para a listagem do blog "Terreiro Bolhas de Luz". Tom acolhedor, espiritual, direto. Retorne APENAS o texto do resumo, sem aspas, sem preâmbulo.`,
@@ -722,91 +578,220 @@ async function slotExcerpt(id) {
     document.getElementById(`${id}-excerpt`).value = text;
     showToast("Resumo gerado! ✨");
   } catch(e) { showToast("Erro na API.", true); }
-  btn.disabled=false; spin.style.display="none";
+  btn.disabled = false; spin.style.display = "none";
 }
 
 // ─── Publicar todos ───────────────────────────
 async function publishAll() {
-  const slots = document.querySelectorAll(".slot");
+  const slots = document.querySelectorAll("#slots-container .slot");
   if (!slots.length) { showToast("Nenhum post para publicar.", true); return; }
 
   const btn  = document.getElementById("btn-publish-all");
   const spin = document.getElementById("batch-spinner");
-  btn.disabled=true; spin.style.display="inline-block";
+  btn.disabled = true; spin.style.display = "inline-block";
 
   const toSave = [];
-  const errors = [];
+  const erros  = [];
 
   slots.forEach(slot => {
-    const id    = slot.id;
-    const title = (document.getElementById(`${id}-title`)?.value||"").trim();
-    const body  = (document.getElementById(`${id}-body`)?.value||"").trim();
-    const excerpt=(document.getElementById(`${id}-excerpt`)?.value||"").trim();
-    const cat   = document.getElementById(`${id}-cat`)?.value || _cats[0];
-    const dateVal = document.getElementById(`${id}-date`)?.value || new Date().toISOString().slice(0,10);
+    const sid     = slot.id;
+    const title   = (document.getElementById(`${sid}-title`)?.value || "").trim();
+    const body    = (document.getElementById(`${sid}-body`)?.value  || "").trim();
+    const excerpt = (document.getElementById(`${sid}-excerpt`)?.value || "").trim();
+    const cat     = document.getElementById(`${sid}-cat`)?.value || _cats[0];
+    const dateVal = document.getElementById(`${sid}-date`)?.value || new Date().toISOString().slice(0,10);
 
-    if (!title) { errors.push(`#${id}: título obrigatório`); return; }
+    if (!title) { erros.push(sid); return; }
 
     const slug = title.toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
       .replace(/[^a-z0-9\s-]/g,"").trim().replace(/\s+/g,"-")
       + "-" + dateVal.replace(/-/g,"");
 
-    const [y,m,d] = dateVal.split("-");
-    toSave.push({ id:slug, title, category:cat, body, excerpt, date:`${d}/${m}/${y}`, dateSort:dateVal, author: AUTHOR_NAME });
+    const [y, m, d] = dateVal.split("-");
+    toSave.push({
+      id: slug, title, category: cat, body, excerpt,
+      date: `${d}/${m}/${y}`, dateSort: dateVal, author: AUTHOR_NAME
+    });
   });
 
-  if (errors.length) { showToast(errors[0], true); btn.disabled=false; spin.style.display="none"; return; }
-
-  try {
-    await window._savePosts(toSave);
-    showToast(`${toSave.length} post(s) publicado(s)! 🎉`);
-    document.getElementById("slots-container").innerHTML = "";
-  } catch(e) {
-    // fallback local
-    toSave.forEach(p => {
-      const idx = _posts.findIndex(x=>x.id===p.id);
-      if (idx>=0) _posts[idx]=p; else _posts.unshift(p);
-    });
-    _posts.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
-    renderPostList();
-    document.getElementById("slots-container").innerHTML = "";
-    showToast(`${toSave.length} post(s) salvo(s) localmente (configure Firebase).`);
+  if (erros.length) {
+    showToast(`${erros.length} post(s) sem título — preencha antes de publicar.`, true);
+    btn.disabled = false; spin.style.display = "none";
+    return;
   }
 
-  btn.disabled=false; spin.style.display="none";
+  if (_usingFirebase) {
+    // ── Modo Firebase ──────────────────────────
+    try {
+      await window._savePosts(toSave);
+      // _loadPosts vai atualizar _posts via onSnapshot automaticamente
+      document.getElementById("slots-container").innerHTML = "";
+      showToast(`${toSave.length} post(s) publicado(s)! 🎉`);
+    } catch(e) {
+      showToast("Erro ao salvar no Firebase.", true);
+      console.error(e);
+    }
+  } else {
+    // ── Modo local (Firebase não configurado) ──
+    toSave.forEach(p => {
+      const idx = _posts.findIndex(x => x.id === p.id);
+      if (idx >= 0) {
+        _posts[idx] = p;  // atualiza existente
+      } else {
+        _posts.push(p);   // adiciona novo
+      }
+    });
+    // reordena por data decrescente
+    _posts.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
+    document.getElementById("slots-container").innerHTML = "";
+    renderPostList();
+    showToast(`${toSave.length} post(s) salvos localmente. Configure o Firebase para persistir.`);
+  }
+
+  btn.disabled = false; spin.style.display = "none";
 }
 
 // ═══════════════════════════════════════════════
-// POSTS — listagem
+// IMPORTAÇÃO EXCEL / CSV
+// ═══════════════════════════════════════════════
+function downloadTemplate() {
+  const headers  = ["Titulo","Categoria","Data","Resumo","Texto_Bruto"];
+  const example  = ["A Força das Águas","Fundamentos","12/08/2026","Resumo breve do post aqui.","Texto longo e bruto para a IA formatar. Pode ser do WhatsApp ou outro blog."];
+  const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+  ws["!cols"] = [{wch:28},{wch:16},{wch:13},{wch:38},{wch:55}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Posts");
+  XLSX.writeFile(wb, "Modelo_Importacao_BolhasDeLuz.xlsx");
+}
+
+function handleImportFile(event) {
+  const file = event.target?.files?.[0] || event.dataTransfer?.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data     = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type:"array", cellDates:true });
+      const ws       = workbook.Sheets[workbook.SheetNames[0]];
+      const json     = XLSX.utils.sheet_to_json(ws, { defval:"" });
+
+      if (!json.length) { showToast("A planilha está vazia.", true); return; }
+
+      let count = 0;
+      json.forEach(row => {
+        // normaliza chaves: minúsculo, sem espaço
+        const r = {};
+        for (const k in row) r[k.toLowerCase().replace(/\s+/g,"_").trim()] = row[k];
+
+        const title = String(r["titulo"] || r["título"] || "").trim();
+        if (!title) return;
+
+        // ── Tratamento de data ──────────────────
+        let dateISO = new Date().toISOString().slice(0,10);
+        const raw   = r["data"];
+
+        if (raw instanceof Date) {
+          // cellDates:true já converte datas do Excel em Date objects
+          dateISO = raw.toISOString().slice(0,10);
+        } else if (typeof raw === "number") {
+          // fallback: Excel serial date
+          const d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+          dateISO = d.toISOString().slice(0,10);
+        } else if (typeof raw === "string") {
+          const s = raw.trim();
+          if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+            // DD/MM/YYYY → YYYY-MM-DD
+            const [d,m,y] = s.split("/");
+            dateISO = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+          } else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+            dateISO = s; // já está no formato certo
+          }
+        }
+
+        addSlot({
+          title,
+          category : String(r["categoria"] || _cats[0]).trim(),
+          date     : dateISO,
+          excerpt  : String(r["resumo"] || "").trim(),
+          raw      : String(r["texto_bruto"] || r["texto bruto"] || "").trim(),
+        });
+        count++;
+      });
+
+      if (count > 0) showToast(`${count} post(s) importado(s)! ✨`);
+      else showToast("Nenhuma linha com título encontrada.", true);
+
+    } catch(err) {
+      console.error(err);
+      showToast("Erro ao processar o arquivo.", true);
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+  // reseta input para permitir reimportar o mesmo arquivo
+  event.target.value = "";
+}
+
+function initDragAndDrop() {
+  const zone = document.getElementById("import-drop-zone");
+  if (!zone) return;
+  ["dragenter","dragover","dragleave","drop"].forEach(ev =>
+    zone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
+  );
+  ["dragenter","dragover"].forEach(ev =>
+    zone.addEventListener(ev, () => zone.classList.add("drag-over"))
+  );
+  ["dragleave","drop"].forEach(ev =>
+    zone.addEventListener(ev, () => zone.classList.remove("drag-over"))
+  );
+  zone.addEventListener("drop", e => handleImportFile(e));
+}
+
+// ═══════════════════════════════════════════════
+// POSTS — lista
 // ═══════════════════════════════════════════════
 function initPosts() {
   try {
-    _unsubPosts = window._loadPosts(posts => { _posts=posts; renderPostList(); });
+    const unsub = window._loadPosts(posts => {
+      _posts = posts;
+      _usingFirebase = true;
+      renderPostList();
+    });
+    _unsubPosts = unsub;
   } catch(e) {
+    // Firebase não configurado — usa posts de exemplo
     _posts = SAMPLE_POSTS;
+    _usingFirebase = false;
     renderPostList();
   }
 }
 
 const SAMPLE_POSTS = [
-  { id:"o-que-e-umbanda", category:"Fundamentos", title:"O que é Umbanda?", date:"20/06/2026", dateSort:"2026-06-20", author:"Mãe Anna",
+  {
+    id:"o-que-e-umbanda", category:"Fundamentos",
+    title:"O que é Umbanda? Uma introdução com amor",
+    date:"20/06/2026", dateSort:"2026-06-20", author:"Mãe Anna",
     excerpt:"A Umbanda é uma religião brasileira que nasce do encontro de três raízes: a espiritualidade africana, a sabedoria indígena e o espiritismo.",
-    body:`<p>A Umbanda surgiu no Brasil no início do século XX, num momento em que culturas distintas precisavam encontrar uma linguagem comum.</p><blockquote>Umbanda é amor. É o coração que se abre antes da mente que compreende.</blockquote>` },
-  { id:"pretos-velhos", category:"Reflexões", title:"Pretos Velhos: os avôs que a história tentou esquecer", date:"05/06/2026", dateSort:"2026-06-05", author:"Mãe Anna",
+    body:`<p>A Umbanda surgiu no Brasil no início do século XX, num momento em que culturas distintas precisavam encontrar uma linguagem comum.</p><blockquote>Umbanda é amor. É o coração que se abre antes da mente que compreende.</blockquote>`
+  },
+  {
+    id:"pretos-velhos", category:"Reflexões",
+    title:"Pretos Velhos: os avôs que a história tentou esquecer",
+    date:"05/06/2026", dateSort:"2026-06-05", author:"Mãe Anna",
     excerpt:"Na gira de Preto Velho, o tempo desacelera. A sabedoria não vem em gestos rápidos — ela vem no cachimbo, no banco de madeira.",
-    body:`<p>Na gira de Preto Velho, o tempo desacelera.</p><blockquote>Meu filho, você veio até mim com a cabeça cheia e o coração vazio. Senta aqui.</blockquote>` }
+    body:`<p>Na gira de Preto Velho, o tempo desacelera.</p><blockquote>Meu filho, você veio até mim com a cabeça cheia e o coração vazio. Senta aqui.</blockquote>`
+  }
 ];
 
 function renderPostList() {
-  const list = _filter==="todas" ? _posts : _posts.filter(p=>p.category===_filter);
+  const list = _filter === "todas" ? _posts : _posts.filter(p => p.category === _filter);
   const el   = document.getElementById("post-list");
-
   if (!list.length) {
     el.innerHTML = '<p class="empty-state">Nenhum post nesta categoria ainda. 🌙</p>';
     return;
   }
-
   el.innerHTML = list.map(p => `
     <div class="post-card" onclick="openPost('${p.id}')">
       <div class="post-card-top">
@@ -821,11 +806,10 @@ function renderPostList() {
       <div class="post-card-footer">
         <span class="comment-count">💬 comentários</span>
         <div style="display:flex;align-items:center;gap:.6rem;">
-          ${_isAdmin ? `
-            <div class="admin-post-btns">
-              <button class="btn-edit-post" onclick="event.stopPropagation();editPostInSlot('${p.id}')">Editar</button>
-              <button class="btn-del-post" onclick="event.stopPropagation();deletePost('${p.id}')">Excluir</button>
-            </div>` : ""}
+          ${_isAdmin ? `<div class="admin-post-btns">
+            <button class="btn-edit-post" onclick="event.stopPropagation();editPostInSlot('${p.id}')">Editar</button>
+            <button class="btn-del-post" onclick="event.stopPropagation();deletePost('${p.id}')">Excluir</button>
+          </div>` : ""}
           <span class="read-more">Ler mais →</span>
         </div>
       </div>
@@ -833,19 +817,20 @@ function renderPostList() {
 }
 
 function editPostInSlot(id) {
-  const p = _posts.find(x=>x.id===id);
+  const p = _posts.find(x => x.id === id);
   if (!p) return;
   addSlot({ title:p.title, category:p.category, date:p.dateSort||"", raw:"", excerpt:p.excerpt||"", body:p.body||"" });
-  // scroll pra área de redação
-  document.getElementById("quick-compose").scrollIntoView({behavior:"smooth"});
+  document.getElementById("quick-compose").scrollIntoView({ behavior:"smooth" });
   showToast("Post carregado para edição.");
 }
 
 async function deletePost(id) {
   if (!confirm("Excluir este post?")) return;
-  try { await window._deletePost(id); showToast("Excluído."); }
-  catch(e) {
-    _posts = _posts.filter(p=>p.id!==id);
+  if (_usingFirebase) {
+    try { await window._deletePost(id); showToast("Excluído."); }
+    catch(e) { showToast("Erro ao excluir.", true); }
+  } else {
+    _posts = _posts.filter(p => p.id !== id);
     renderPostList();
     showToast("Removido localmente.");
   }
@@ -855,13 +840,15 @@ async function deletePost(id) {
 // POST INDIVIDUAL
 // ═══════════════════════════════════════════════
 function openPost(id) {
-  const p = _posts.find(x=>x.id===id); if(!p) return;
+  const p = _posts.find(x => x.id === id);
+  if (!p) return;
   _activePid = id;
-  document.getElementById("pv-title").textContent = p.title;
-  document.getElementById("pv-body").innerHTML    = p.body||"";
-  document.getElementById("pv-date").textContent  = p.date||"";
-  document.getElementById("pv-author").textContent= `${p.author||AUTHOR_NAME} · Terreiro Bolhas de Luz`;
-  document.getElementById("pv-badges").innerHTML  = `<span class="cat-badge">${p.category||"Geral"}</span>`;
+
+  document.getElementById("pv-title").textContent  = p.title;
+  document.getElementById("pv-body").innerHTML     = p.body || "";
+  document.getElementById("pv-date").textContent   = p.date || "";
+  document.getElementById("pv-author").textContent = `${p.author||AUTHOR_NAME} · Terreiro Bolhas de Luz`;
+  document.getElementById("pv-badges").innerHTML   = `<span class="cat-badge">${p.category||"Geral"}</span>`;
   showView("post");
 
   if (_unsubComm) _unsubComm();
@@ -870,14 +857,15 @@ function openPost(id) {
   try {
     _unsubComm = window._loadComments(id, comments => {
       if (!comments.length) {
-        listEl.innerHTML='<p class="comments-empty">Seja o primeiro a comentar. 🌟</p>';
+        listEl.innerHTML = '<p class="comments-empty">Seja o primeiro a comentar. 🌟</p>';
       } else {
-        listEl.innerHTML = comments.map(c=>{
+        listEl.innerHTML = comments.map(c => {
           const ts = c.createdAt?.toDate?.();
           const t  = ts ? ts.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
           return `<div class="comment-item">
             <div class="comment-header">
-              <img src="${c.authorPhoto||''}" class="comment-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.authorName)}&background=fce8ef&color=c4396b&size=52'">
+              <img src="${c.authorPhoto||''}" class="comment-avatar"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.authorName)}&background=fce8ef&color=c4396b&size=52'">
               <span class="comment-author">${c.authorName}</span>
               <span class="comment-time">${t}</span>
             </div>
@@ -887,7 +875,7 @@ function openPost(id) {
       }
     });
   } catch(e) {
-    listEl.innerHTML='<p class="comments-empty">Configure o Firebase para ativar comentários.</p>';
+    listEl.innerHTML = '<p class="comments-empty">Configure o Firebase para ativar comentários.</p>';
   }
   updateCommentUI();
 }
@@ -898,165 +886,66 @@ function openPost(id) {
 async function submitComment() {
   const inp = document.getElementById("comment-input");
   const btn = document.getElementById("btn-comment-submit");
-  const txt = (inp.value||"").trim();
-  if (!txt||!_activePid) return;
-  btn.disabled=true; btn.textContent="Publicando…";
-  try { await window._addComment(_activePid,txt); inp.value=""; showToast("Comentário publicado! ✨"); }
-  catch(e) { showToast("Erro ao publicar.",true); }
-  btn.disabled=false; btn.textContent="Publicar";
+  const txt = (inp.value || "").trim();
+  if (!txt || !_activePid) return;
+  btn.disabled = true; btn.textContent = "Publicando…";
+  try {
+    await window._addComment(_activePid, txt);
+    inp.value = "";
+    showToast("Comentário publicado! ✨");
+  } catch(e) { showToast("Erro ao publicar.", true); }
+  btn.disabled = false; btn.textContent = "Publicar";
 }
 
 // ═══════════════════════════════════════════════
-// IMPORTAÇÃO / EXPORTAÇÃO (EXCEL/CSV)
-// ═══════════════════════════════════════════════
-
-// Função para exportar a planilha modelo
-function downloadTemplate() {
-  const headers = ["Titulo", "Categoria", "Data", "Resumo", "Texto_Bruto"];
-  const sampleRow = ["A Força das Águas", "Fundamentos", "12/08/2026", "Breve resumo...", "Texto longo e bruto para a IA formatar..."];
-  
-  const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Posts");
-  
-  // Ajusta a largura das colunas para ficar visualmente melhor no Excel
-  ws['!cols'] = [{wch: 25}, {wch: 15}, {wch: 12}, {wch: 35}, {wch: 50}];
-  
-  XLSX.writeFile(wb, "Modelo_Importacao_BolhasDeLuz.xlsx");
-}
-
-// Função para ler o arquivo e gerar os slots
-function handleImportFile(event) {
-  const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      
-      // Converte a aba para JSON
-      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-      if (json.length === 0) {
-        showToast("A planilha está vazia.", true);
-        return;
-      }
-
-      let count = 0;
-      json.forEach(row => {
-        // Normaliza as chaves da planilha para evitar erro de maiúscula/minúscula
-        const cleanRow = {};
-        for (let key in row) cleanRow[key.toLowerCase().trim()] = row[key];
-
-        const title = cleanRow['titulo'] || cleanRow['título'] || "";
-        if (!title) return; // Ignora linhas sem título
-
-        // Tratamento da data (o input type="date" exige formato YYYY-MM-DD)
-        let formattedDate = "";
-        const rawDate = cleanRow['data'];
-        
-        if (typeof rawDate === 'number') {
-          // O Excel armazena datas como números (dias desde 01/01/1900)
-          const dateObj = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-          formattedDate = dateObj.toISOString().slice(0, 10);
-        } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
-          // Converte DD/MM/YYYY para YYYY-MM-DD
-          const [d, m, y] = rawDate.split('/');
-          if (y && m && d) formattedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-        } else {
-          formattedDate = rawDate; // Tenta usar como está
-        }
-
-        // Adiciona um novo slot com os dados preenchidos
-        addSlot({
-          title: title,
-          category: cleanRow['categoria'] || _cats[0],
-          date: formattedDate || new Date().toISOString().slice(0, 10),
-          excerpt: cleanRow['resumo'] || "",
-          raw: cleanRow['texto_bruto'] || cleanRow['texto bruto'] || ""
-        });
-        count++;
-      });
-
-      showToast(`${count} post(s) importado(s) da planilha! ✨`);
-    } catch (error) {
-      console.error(error);
-      showToast("Erro ao processar o arquivo.", true);
-    }
-  };
-  
-  reader.readAsArrayBuffer(file);
-  // Reseta o input para permitir importar o mesmo arquivo novamente se necessário
-  if(event.target.value) event.target.value = "";
-}
-
-function initDragAndDrop() {
-  const dropZone = document.getElementById("import-drop-zone");
-  if(!dropZone) return;
-
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
-    dropZone.addEventListener(evt, e => {
-      e.preventDefault(); e.stopPropagation();
-    });
-  });
-
-  ['dragenter', 'dragover'].forEach(evt => {
-    dropZone.addEventListener(evt, () => dropZone.classList.add('drag-over'));
-  });
-
-  ['dragleave', 'drop'].forEach(evt => {
-    dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'));
-  });
-
-  dropZone.addEventListener('drop', e => handleImportFile(e));
-}
-
-// ═══════════════════════════════════════════════
-// IA helper
+// IA
 // ═══════════════════════════════════════════════
 async function callAI(system, userMsg) {
-  const res = await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      model:"claude-sonnet-4-6", max_tokens:1000,
-      system, messages:[{role:"user",content:userMsg}]
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6", max_tokens: 1000,
+      system, messages: [{ role:"user", content:userMsg }]
     })
   });
   const data = await res.json();
-  return (data.content?.find(b=>b.type==="text")?.text||"").trim();
+  return (data.content?.find(b => b.type === "text")?.text || "").trim();
 }
 
 // ═══════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════
-function showToast(msg,isError=false){
-  const t=document.getElementById("toast");
-  t.textContent=msg; t.className="toast"+(isError?" error":"");
-  t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200);
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast" + (isError ? " error" : "");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3400);
 }
-function escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");}
-function escAttr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;");}
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+}
+function escAttr(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+}
 
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
 document.addEventListener("authChanged", updateHeaderAuth);
-document.addEventListener("keydown", e=>{
-  if (e.target.id==="comment-input"&&(e.ctrlKey||e.metaKey)&&e.key==="Enter") submitComment();
+document.addEventListener("keydown", e => {
+  if (e.target.id === "comment-input" && (e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment();
 });
 
 async function init() {
   renderCatMenu();
   try {
     const cats = await window._loadCategories();
-    if (cats?.length) { _cats=cats; renderCatMenu(); }
+    if (cats?.length) { _cats = cats; renderCatMenu(); }
   } catch(e) {}
   initPosts();
-  initDragAndDrop(); // Inicializa eventos de arrastar/soltar
+  initDragAndDrop();
 }
 init();
 </script>
