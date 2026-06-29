@@ -16,8 +16,12 @@
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey:"COLE_AQUI", authDomain:"COLE_AQUI", projectId:"COLE_AQUI",
-    storageBucket:"COLE_AQUI", messagingSenderId:"COLE_AQUI", appId:"COLE_AQUI"
+    apiKey:            "AIzaSyDZ_vFMHZ7t7nyJWJPRfD280VZzagqY5Ws",
+    authDomain:        "terreiro-bolhas-de-luz.firebaseapp.com",
+    projectId:         "terreiro-bolhas-de-luz",
+    storageBucket:     "terreiro-bolhas-de-luz.firebasestorage.app",
+    messagingSenderId: "179602931861",
+    appId:             "1:179602931861:web:5cf336e9077334cee05b9c"
   };
 
   let _fbReady = false;
@@ -154,6 +158,45 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-publish-batch:disabled{opacity:.4;cursor:not-allowed;}
 .btn-add-slot{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.7);font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:8px 18px;cursor:pointer;transition:background .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .btn-add-slot:hover{background:rgba(255,255,255,.14);}
+
+/* GERENCIADOR DE POSTS EM LOTE */
+.mgr-panel{background:rgba(255,255,255,.04);border:1px solid rgba(196,57,107,.2);border-radius:10px;padding:1rem 1.1rem;margin-top:.9rem;}
+.mgr-panel-title{font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.8rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.mgr-toolbar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem;padding-bottom:.7rem;border-bottom:1px solid rgba(196,57,107,.15);}
+.mgr-select-all{display:flex;align-items:center;gap:.4rem;font-family:'DM Sans',sans-serif;font-size:.78rem;color:rgba(255,255,255,.6);cursor:pointer;}
+.mgr-select-all input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;}
+.mgr-count{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-left:.2rem;}
+.mgr-batch-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-left:auto;}
+.mgr-cat-change{background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:5px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:4px 8px;outline:none;cursor:pointer;}
+.mgr-cat-change option{background:#3d2232;}
+
+.mgr-list{display:grid;gap:.5rem;max-height:320px;overflow-y:auto;padding-right:.2rem;}
+.mgr-list::-webkit-scrollbar{width:4px;}
+.mgr-list::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:4px;}
+.mgr-list::-webkit-scrollbar-thumb{background:rgba(196,57,107,.3);border-radius:4px;}
+
+.mgr-item{display:flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.04);border:1px solid rgba(196,57,107,.12);border-radius:7px;padding:.55rem .8rem;transition:background .14s;}
+.mgr-item:hover{background:rgba(255,255,255,.07);}
+.mgr-item.selected{background:rgba(196,57,107,.12);border-color:rgba(196,57,107,.3);}
+.mgr-item input[type=checkbox]{accent-color:var(--gold);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+.mgr-item-info{flex:1;min-width:0;}
+.mgr-item-title{font-family:'DM Sans',sans-serif;font-size:.82rem;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mgr-item-meta{font-size:.68rem;color:rgba(255,255,255,.35);margin-top:.1rem;}
+.mgr-item-cat{font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:rgba(196,57,107,.7);background:rgba(196,57,107,.12);border-radius:10px;padding:1px 7px;flex-shrink:0;}
+.mgr-item-actions{display:flex;gap:.3rem;flex-shrink:0;}
+.mgr-edit-btn{background:none;border:1px solid rgba(255,255,255,.12);border-radius:4px;color:rgba(255,255,255,.45);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:3px 8px;cursor:pointer;transition:border-color .14s,color .14s;}
+.mgr-edit-btn:hover{border-color:var(--gold-light);color:var(--gold-light);}
+.mgr-del-btn{background:none;border:1px solid rgba(184,64,64,.2);border-radius:4px;color:rgba(184,64,64,.6);font-family:'Cinzel',serif;font-size:.55rem;letter-spacing:.08em;padding:3px 8px;cursor:pointer;transition:background .14s;}
+.mgr-del-btn:hover{background:rgba(184,64,64,.15);color:#e88;}
+
+/* EDIÇÃO DE CATEGORIAS EM LOTE */
+.cat-edit-list{display:grid;gap:.4rem;margin-bottom:.7rem;}
+.cat-edit-item{display:flex;align-items:center;gap:.5rem;}
+.cat-edit-input{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:5px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.82rem;padding:5px 9px;outline:none;transition:border-color .16s;}
+.cat-edit-input:focus{border-color:var(--gold-light);}
+.cat-edit-rm{background:none;border:none;color:rgba(255,255,255,.25);cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;transition:color .14s;}
+.cat-edit-rm:hover{color:#e88;}
+.cat-edit-drag{color:rgba(255,255,255,.2);cursor:grab;font-size:.9rem;padding:0 2px;}
 
 /* IMPORTAÇÃO */
 .import-panel{background:rgba(255,255,255,.04);border:1px dashed rgba(196,57,107,.3);border-radius:10px;padding:1rem 1.1rem;margin-top:.9rem;}
@@ -319,6 +362,42 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <input type="text" class="slot-input-sm" id="cat-new-input" placeholder="Nova categoria…" style="flex:1;" onkeydown="if(event.key==='Enter')addCategory()">
           <button class="btn-slot" onclick="addCategory()">+ Adicionar</button>
           <button class="btn-slot green" onclick="saveCategories()">💾 Salvar</button>
+        </div>
+        <!-- Edição em lote de categorias -->
+        <div style="margin-top:.7rem;padding-top:.7rem;border-top:1px solid rgba(196,57,107,.15);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.4rem;">
+            <span style="font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">✏️ Renomear em lote</span>
+            <div style="display:flex;gap:.4rem;">
+              <button class="btn-slot" onclick="renderCatEditList()">Editar nomes</button>
+              <button class="btn-slot green" onclick="saveCatEdits()">💾 Aplicar</button>
+            </div>
+          </div>
+          <div class="cat-edit-list" id="cat-edit-list"></div>
+        </div>
+      </div>
+
+      <!-- Gerenciador de posts em lote -->
+      <div class="mgr-panel">
+        <p class="mgr-panel-title">
+          <span>📋 Gerenciar Posts</span>
+          <button class="btn-slot" onclick="renderMgrList()" style="font-size:.56rem;">↺ Atualizar lista</button>
+        </p>
+        <div class="mgr-toolbar">
+          <label class="mgr-select-all">
+            <input type="checkbox" id="mgr-check-all" onchange="toggleSelectAll(this.checked)">
+            Selecionar todos
+          </label>
+          <span class="mgr-count" id="mgr-count">0 selecionados</span>
+          <div class="mgr-batch-actions">
+            <select class="mgr-cat-change" id="mgr-cat-target">
+              <option value="">Mover para categoria…</option>
+            </select>
+            <button class="btn-slot green" onclick="batchChangeCategory()">✔ Aplicar categoria</button>
+            <button class="btn-slot" style="background:rgba(184,64,64,.25);border-color:rgba(184,64,64,.4);" onclick="batchDelete()">🗑 Excluir selecionados</button>
+          </div>
+        </div>
+        <div class="mgr-list" id="mgr-list">
+          <p style="font-family:'Crimson Pro',serif;font-size:.85rem;color:rgba(255,255,255,.3);font-style:italic;text-align:center;padding:.8rem 0;">Clique em "Atualizar lista" para carregar os posts.</p>
         </div>
       </div>
 
@@ -791,6 +870,8 @@ function initPosts() {
       _posts = posts;
       _usingFirebase = true;
       renderPostList();
+      // atualiza gerenciador se já estiver aberto
+      if (document.getElementById("mgr-list")?.querySelector(".mgr-item")) renderMgrList();
     });
     _unsubPosts = unsub;
   } catch(e) {
@@ -928,6 +1009,167 @@ async function submitComment() {
     showToast("Comentário publicado! ✨");
   } catch(e) { showToast("Erro ao publicar.", true); }
   btn.disabled = false; btn.textContent = "Publicar";
+}
+
+// ═══════════════════════════════════════════════
+// GERENCIADOR DE POSTS EM LOTE
+// ═══════════════════════════════════════════════
+function renderMgrList() {
+  const el = document.getElementById("mgr-list");
+  // atualiza select de categorias
+  const sel = document.getElementById("mgr-cat-target");
+  sel.innerHTML = `<option value="">Mover para categoria…</option>` +
+    _cats.map(c => `<option value="${c}">${c}</option>`).join("");
+
+  if (!_posts.length) {
+    el.innerHTML = '<p style="font-family:\'Crimson Pro\',serif;font-size:.85rem;color:rgba(255,255,255,.3);font-style:italic;text-align:center;padding:.8rem 0;">Nenhum post ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = _posts.map(p => `
+    <div class="mgr-item" id="mgr-${p.id}">
+      <input type="checkbox" onchange="updateMgrCount();document.getElementById('mgr-${p.id}').classList.toggle('selected',this.checked)" data-pid="${p.id}">
+      <div class="mgr-item-info">
+        <div class="mgr-item-title">${p.title}</div>
+        <div class="mgr-item-meta">${p.date||""}</div>
+      </div>
+      <span class="mgr-item-cat">${p.category||"Geral"}</span>
+      <div class="mgr-item-actions">
+        <button class="mgr-edit-btn" onclick="editPostInSlot('${p.id}')">Editar</button>
+        <button class="mgr-del-btn" onclick="deletePost('${p.id}')">Excluir</button>
+      </div>
+    </div>`).join("");
+
+  document.getElementById("mgr-check-all").checked = false;
+  updateMgrCount();
+}
+
+function updateMgrCount() {
+  const checked = document.querySelectorAll("#mgr-list input[type=checkbox]:checked").length;
+  document.getElementById("mgr-count").textContent = `${checked} selecionado(s)`;
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll("#mgr-list input[type=checkbox]").forEach(cb => {
+    cb.checked = checked;
+    const pid = cb.dataset.pid;
+    document.getElementById(`mgr-${pid}`)?.classList.toggle("selected", checked);
+  });
+  updateMgrCount();
+}
+
+function getSelectedPids() {
+  return [...document.querySelectorAll("#mgr-list input[type=checkbox]:checked")]
+    .map(cb => cb.dataset.pid);
+}
+
+async function batchDelete() {
+  const pids = getSelectedPids();
+  if (!pids.length) { showToast("Nenhum post selecionado.", true); return; }
+  if (!confirm(`Excluir ${pids.length} post(s)? Esta ação não pode ser desfeita.`)) return;
+
+  if (_usingFirebase) {
+    try {
+      for (const id of pids) await window._deletePost(id);
+      showToast(`${pids.length} post(s) excluído(s).`);
+    } catch(e) { showToast("Erro ao excluir.", true); return; }
+  } else {
+    _posts = _posts.filter(p => !pids.includes(p.id));
+    renderPostList();
+    showToast(`${pids.length} post(s) removido(s) localmente.`);
+  }
+  renderMgrList();
+}
+
+async function batchChangeCategory() {
+  const pids = getSelectedPids();
+  const cat  = document.getElementById("mgr-cat-target").value;
+  if (!pids.length) { showToast("Nenhum post selecionado.", true); return; }
+  if (!cat)         { showToast("Selecione uma categoria.", true); return; }
+
+  if (_usingFirebase) {
+    try {
+      const toSave = pids.map(id => {
+        const p = _posts.find(x => x.id === id);
+        return p ? { ...p, category: cat } : null;
+      }).filter(Boolean);
+      await window._savePosts(toSave);
+      showToast(`${pids.length} post(s) movido(s) para "${cat}".`);
+    } catch(e) { showToast("Erro ao atualizar.", true); return; }
+  } else {
+    pids.forEach(id => {
+      const p = _posts.find(x => x.id === id);
+      if (p) p.category = cat;
+    });
+    renderPostList();
+    showToast(`${pids.length} post(s) movido(s) para "${cat}" localmente.`);
+  }
+  renderMgrList();
+}
+
+// ═══════════════════════════════════════════════
+// EDIÇÃO DE CATEGORIAS EM LOTE
+// ═══════════════════════════════════════════════
+function renderCatEditList() {
+  const el = document.getElementById("cat-edit-list");
+  el.innerHTML = _cats.map((c, i) => `
+    <div class="cat-edit-item" data-index="${i}">
+      <span class="cat-edit-drag">⠿</span>
+      <input type="text" class="cat-edit-input" data-old="${c}" value="${c}"
+        placeholder="Nome da categoria">
+      <button class="cat-edit-rm" onclick="removeCatEdit(${i})" title="Remover">×</button>
+    </div>`).join("");
+}
+
+function removeCatEdit(i) {
+  const items = document.querySelectorAll("#cat-edit-list .cat-edit-item");
+  items[i]?.remove();
+}
+
+async function saveCatEdits() {
+  const inputs = document.querySelectorAll("#cat-edit-list .cat-edit-input");
+  if (!inputs.length) { showToast("Abra o editor primeiro.", true); return; }
+
+  const oldNames = [];
+  const newNames = [];
+  inputs.forEach(inp => {
+    const old = inp.dataset.old;
+    const nw  = inp.value.trim();
+    if (old) oldNames.push(old);
+    if (nw)  newNames.push(nw);
+  });
+
+  if (new Set(newNames).size !== newNames.length) {
+    showToast("Categorias com nomes duplicados.", true); return;
+  }
+
+  // Renomeia nos posts em memória
+  const renames = {};
+  oldNames.forEach((old, i) => { if (old !== newNames[i]) renames[old] = newNames[i]; });
+
+  if (Object.keys(renames).length) {
+    _posts.forEach(p => {
+      if (renames[p.category]) p.category = renames[p.category];
+    });
+    if (_usingFirebase) {
+      try {
+        await window._savePosts(_posts.filter(p => Object.values(renames).includes(p.category)));
+      } catch(e) { showToast("Erro ao atualizar posts.", true); return; }
+    }
+  }
+
+  _cats = newNames;
+  renderCatMenu();
+  renderPostList();
+
+  try {
+    await window._saveCategories(_cats);
+    showToast("Categorias atualizadas e salvas! ✨");
+  } catch(e) {
+    showToast("Categorias atualizadas localmente.");
+  }
+
+  document.getElementById("cat-edit-list").innerHTML = "";
 }
 
 // ═══════════════════════════════════════════════
