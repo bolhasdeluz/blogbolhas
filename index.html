@@ -1146,16 +1146,19 @@ async function deletePost(id) {
 // ═══════════════════════════════════════════════
 let _modalVersion = "resumo"; // "resumo" | "original"
 
+let _modalPost = null; // guarda o post atual do modal
+
 function openPost(id) {
   const p = _posts.find(x => x.id === id);
   if (!p) return;
-  _activePid   = id;
+  _activePid    = id;
+  _modalPost    = p;
   _modalVersion = "resumo";
 
   // preenche cabeçalho
   document.getElementById("pm-meta").innerHTML =
     `<span class="cat-badge">${p.category||"Geral"}</span>`;
-  document.getElementById("pm-title").textContent  = p.title;
+  document.getElementById("pm-title").textContent = p.title;
   document.getElementById("pm-author-row").innerHTML =
     `<img src="https://ui-avatars.com/api/?name=Bolhas+de+Luz&background=c4396b&color=fff&size=56"
        class="author-avatar-sm" alt="">
@@ -1163,20 +1166,12 @@ function openPost(id) {
      <span>·</span>
      <span>${p.date||""}</span>`;
 
-  // guarda os dois conteúdos no modal via data attrs
-  document.getElementById("post-modal").dataset.body    = p.body    || "";
-  document.getElementById("post-modal").dataset.raw     = p.raw     || "";
-  document.getElementById("post-modal").dataset.excerpt = p.excerpt || "";
-
-  // mostra versão resumo por padrão
+  // mostra conteúdo
   switchVersion("resumo");
 
   // abre overlay
-  const overlay = document.getElementById("post-modal-overlay");
-  overlay.classList.add("open");
+  document.getElementById("post-modal-overlay").classList.add("open");
   document.body.style.overflow = "hidden";
-
-  // scroll pra cima do modal
   document.getElementById("post-modal").scrollTop = 0;
 
   // comentários
@@ -1212,28 +1207,31 @@ function openPost(id) {
 
 function switchVersion(v) {
   _modalVersion = v;
-  const modal   = document.getElementById("post-modal");
+  if (!_modalPost) return;
   const content = document.getElementById("pm-content");
-  const body    = modal.dataset.body    || "";
-  const raw     = modal.dataset.raw     || "";
-  const excerpt = modal.dataset.excerpt || "";
+  const body    = (_modalPost.body    || "").trim();
+  const raw     = (_modalPost.raw     || "").trim();
+  const excerpt = (_modalPost.excerpt || "").trim();
 
   document.getElementById("pm-btn-resumo").classList.toggle("active",   v === "resumo");
   document.getElementById("pm-btn-original").classList.toggle("active", v === "original");
 
   if (v === "resumo") {
-    // mostra HTML formatado (body); se não tiver, mostra excerpt
     content.className = "pm-content";
-    content.innerHTML = body || `<p>${excerpt}</p>` || "<p><em>Sem conteúdo formatado.</em></p>";
+    if (body) {
+      content.innerHTML = body;
+    } else if (excerpt) {
+      content.innerHTML = `<p>${excerpt}</p>`;
+    } else {
+      content.innerHTML = `<p style="color:var(--text-dim);font-style:italic;">Este post ainda não tem conteúdo formatado. Cole o texto bruto no painel admin e clique em ✨ Formatar.</p>`;
+    }
   } else {
-    // mostra texto bruto original
     content.className = "pm-content raw-mode";
     content.textContent = raw || "Texto original não disponível para este post.";
   }
 
-  // toggle visível só se tiver texto bruto
-  document.getElementById("pm-toggle").style.display =
-    (raw && raw.trim()) ? "flex" : "none";
+  // toggle só aparece se tiver texto bruto
+  document.getElementById("pm-toggle").style.display = raw ? "flex" : "none";
 }
 
 function closePostModal(e) {
