@@ -9,7 +9,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut,
+    onAuthStateChanged, signInWithCustomToken }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, collection, addDoc, doc, setDoc, deleteDoc, query,
     where, orderBy, onSnapshot, serverTimestamp, getDocs }
@@ -35,6 +36,19 @@
 
     window._fbSignIn  = () => signInWithPopup(auth, provider).catch(console.error);
     window._fbSignOut = () => signOut(auth);
+
+    // Auto-login via token passado pelo site principal (?token=...)
+    const urlToken = new URLSearchParams(window.location.search).get("token");
+    if (urlToken) {
+      signInWithCustomToken(auth, urlToken)
+        .then(() => {
+          // limpa o token da URL sem recarregar
+          const url = new URL(window.location.href);
+          url.searchParams.delete("token");
+          window.history.replaceState({}, "", url.toString());
+        })
+        .catch(() => {}); // token inválido/expirado — ignora, segue sem login
+    }
 
     onAuthStateChanged(auth, user => {
       window._currentUser = user || null;
@@ -266,6 +280,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .mgr-row-del{background:none;border:none;color:rgba(184,64,64,.4);font-size:.7rem;cursor:pointer;padding:3px 6px;border-radius:4px;transition:background .12s,color .12s;}
 .mgr-row-del:hover{background:rgba(184,64,64,.12);color:#e88;}
 .mgr-empty{font-family:'Crimson Pro',serif;font-size:.88rem;color:rgba(255,255,255,.25);font-style:italic;text-align:center;padding:1.5rem 1rem;}
+.mgr-sort-btn{cursor:pointer;user-select:none;transition:color .12s;}
+.mgr-sort-btn:hover{color:rgba(255,255,255,.6);}
+.mgr-preview-btn{background:none;border:none;color:rgba(255,255,255,.3);font-size:.75rem;cursor:pointer;padding:3px 6px;border-radius:4px;transition:background .12s,color .12s;}
+.mgr-preview-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);}
 
 /* checkbox selecionar tudo */
 .mgr-check-all-wrap{display:flex;align-items:center;}
@@ -293,6 +311,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .import-template-row{display:flex;align-items:center;justify-content:space-between;margin-top:.65rem;flex-wrap:wrap;gap:.4rem;}
 .btn-template{background:none;border:1px solid rgba(255,255,255,.15);border-radius:5px;color:rgba(255,255,255,.5);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;cursor:pointer;transition:border-color .16s,color .16s;}
 .btn-template:hover{border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.75);}
+
+/* PAGINAÇÃO */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:.8rem .2rem;gap:.5rem;flex-wrap:wrap;}
+.page-info{font-family:'DM Sans',sans-serif;font-size:.75rem;color:var(--text-dim);}
+.page-btns{display:flex;gap:.4rem;}
+.page-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;font-weight:600;text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:border-color .16s,color .16s;}
+.page-btn:hover{border-color:var(--gold);color:var(--gold);}
+.page-btn.primary{background:var(--gold);border-color:var(--gold);color:#fff;}
+.page-btn.primary:hover{background:var(--gold-light);}
 
 /* LAYOUT COM SIDEBAR */
 .list-layout{display:grid;grid-template-columns:1fr 260px;gap:2rem;margin-top:2rem;align-items:start;}
@@ -347,6 +374,36 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 /* POST FULL */
 #post-view{display:none;}
+.back-to-site{
+  display:inline-block;margin-bottom:.9rem;
+  font-family:'Cinzel',serif;font-size:.6rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);text-decoration:none;
+  transition:opacity .16s;
+}
+.back-to-site:hover{opacity:.7;}
+
+/* FILTRO DE CATEGORIAS (abaixo do hero) */
+.cat-filter-bar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  margin:0 -1.25rem;
+  padding:.55rem 1.25rem;
+  position:sticky;top:54px;z-index:100;
+  box-shadow:0 2px 8px rgba(180,60,90,.06);
+}
+.cat-filter-nav{
+  max-width:960px;margin:0 auto;
+  display:flex;align-items:center;gap:.4rem;
+  overflow-x:auto;scrollbar-width:none;
+}
+.cat-filter-nav::-webkit-scrollbar{display:none;}
+.cat-filter-nav .cat-pill{
+  background:var(--gold-dim);border:1px solid var(--border);
+  color:var(--text-dim);font-size:.68rem;
+}
+.cat-filter-nav .cat-pill:hover{background:rgba(196,57,107,.14);color:var(--text);}
+.cat-filter-nav .cat-pill.active{background:var(--gold);border-color:var(--gold);color:#fff;}
 .back-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;padding:7px 14px;cursor:pointer;margin-bottom:1.5rem;transition:border-color .16s,color .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .back-btn:hover{border-color:var(--gold);color:var(--gold);}
 .post-full-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,4vw,2rem);font-weight:600;color:var(--text);line-height:1.25;margin-bottom:.6rem;}
@@ -485,9 +542,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 <header class="site-header">
   <div class="header-inner">
-    <button class="site-logo" onclick="showView('list')"><span>🕯️</span> Bolhas de Luz</button>
-    <nav class="header-cats" id="header-cats"></nav>
-    <select class="mobile-cat-select" id="mobile-cat-select" onchange="filterCat(this.value)"><option value="todas">Todas</option></select>
+    <a href="https://homepage-3vx.pages.dev/#" class="site-logo" style="text-decoration:none;">
+      <span>🕯️</span> Bolhas de Luz
+    </a>
     <div class="header-actions" id="header-auth">
       <button class="btn-pill" onclick="window._fbSignIn()">Entrar</button>
     </div>
@@ -497,9 +554,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <main class="main-wrap">
   <div id="list-view">
     <div class="blog-hero">
+      <a href="https://homepage-3vx.pages.dev/#" class="back-to-site">← Voltar ao site</a>
       <p class="hero-eyebrow">Terreiro Bolhas de Luz · Porto Alegre</p>
       <h1 class="hero-title">Palavras do Terreiro</h1>
       <p class="hero-sub">Ensinamentos, avisos e histórias da nossa gira.</p>
+    </div>
+
+    <!-- Filtro de categorias — abaixo do banner -->
+    <div class="cat-filter-bar" id="cat-filter-bar">
+      <nav class="cat-filter-nav" id="header-cats"></nav>
     </div>
 
     <div id="quick-compose" style="display:none;">
@@ -671,8 +734,23 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="mgr-panel">
         <div class="mgr-panel-head">
           <span class="mgr-panel-label">📋 Posts publicados</span>
-          <button class="mgr-refresh" onclick="renderMgrList()">↺ Atualizar</button>
+          <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;">
+            <!-- Filtro por categoria -->
+            <select class="mgr-cat-select" id="mgr-filter-cat" onchange="renderMgrList()" style="font-size:.65rem;">
+              <option value="">Todas as cats</option>
+            </select>
+            <!-- Ordenação -->
+            <select class="mgr-cat-select" id="mgr-sort" onchange="renderMgrList()" style="font-size:.65rem;">
+              <option value="date-desc">↓ Data</option>
+              <option value="date-asc">↑ Data</option>
+              <option value="alpha-asc">A → Z</option>
+              <option value="alpha-desc">Z → A</option>
+            </select>
+            <button class="mgr-refresh" onclick="renderMgrList()">↺</button>
+          </div>
         </div>
+
+        <!-- barra de ações contextual -->
         <div class="mgr-action-bar" id="mgr-action-bar">
           <span class="mgr-sel-count" id="mgr-sel-count">0</span>
           <span style="font-family:'DM Sans',sans-serif;font-size:.72rem;color:rgba(255,255,255,.45);">selecionados</span>
@@ -683,15 +761,37 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <button class="mgr-act-btn danger" onclick="batchDelete()">🗑 Excluir</button>
           <button class="mgr-deselect" onclick="toggleSelectAll(false)">✕</button>
         </div>
-        <div class="mgr-table-head">
+
+        <!-- cabeçalho clicável para ordenar -->
+        <div class="mgr-table-head" style="grid-template-columns:32px 1fr 110px 90px 90px;">
           <div class="mgr-check-all-wrap"><input type="checkbox" id="mgr-check-all" onchange="toggleSelectAll(this.checked)"></div>
-          <span class="mgr-th">Título</span>
-          <span class="mgr-th">Categoria</span>
-          <span class="mgr-th center">Data</span>
+          <span class="mgr-th mgr-sort-btn" onclick="mgrSetSort('alpha')" title="Ordenar por título">Título ⇅</span>
+          <span class="mgr-th mgr-sort-btn" onclick="mgrSetSort('cat')" title="Ordenar por categoria">Categoria ⇅</span>
+          <span class="mgr-th center mgr-sort-btn" onclick="mgrSetSort('date')" title="Ordenar por data">Data ⇅</span>
           <span class="mgr-th"></span>
         </div>
+
         <div class="mgr-rows" id="mgr-list">
-          <p class="mgr-empty">Clique em Atualizar para carregar os posts.</p>
+          <p class="mgr-empty">Clique em ↺ para carregar os posts.</p>
+        </div>
+      </div>
+
+      <!-- Modal de preview do post no admin -->
+      <div id="mgr-preview-overlay" onclick="closeMgrPreview(event)" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(40,10,20,.7);backdrop-filter:blur(4px);padding:1rem;overflow-y:auto;align-items:flex-start;justify-content:center;">
+        <div id="mgr-preview-modal" style="background:#fff;border-radius:14px;border-top:3px solid var(--gold);box-shadow:0 12px 48px rgba(196,57,107,.2);width:100%;max-width:640px;margin:auto;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#fde8ed,#fce8ef);padding:.7rem 1.1rem;display:flex;align-items:center;justify-content:space-between;">
+            <span id="mgr-preview-cat" class="cat-badge"></span>
+            <button onclick="closeMgrPreview()" style="background:none;border:none;color:var(--text-dim);font-size:1.1rem;cursor:pointer;">✕</button>
+          </div>
+          <div style="padding:1.4rem 1.6rem;">
+            <h2 id="mgr-preview-title" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--text);margin-bottom:.4rem;line-height:1.3;"></h2>
+            <p id="mgr-preview-meta" style="font-size:.75rem;color:var(--text-dim);margin-bottom:1.2rem;"></p>
+            <div id="mgr-preview-excerpt" style="font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-dim);font-style:italic;border-left:3px solid var(--border);padding:.5rem .9rem;margin-bottom:1.2rem;line-height:1.6;"></div>
+            <div id="mgr-preview-body" class="post-body" style="max-width:none;"></div>
+          </div>
+          <div style="padding:.8rem 1.6rem 1.2rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;">
+            <button onclick="closeMgrPreview()" class="btn-secondary" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.08em;padding:7px 16px;cursor:pointer;">Fechar</button>
+          </div>
         </div>
       </div>
 
@@ -898,13 +998,10 @@ function updateCommentUI() {
 // CATEGORIAS
 // ═══════════════════════════════════════════════
 function renderCatMenu() {
-  document.getElementById("header-cats").innerHTML =
+  const nav = document.getElementById("header-cats");
+  if (nav) nav.innerHTML =
     `<button class="cat-pill ${_filter==='todas'?'active':''}" onclick="filterCat('todas')">Todas</button>` +
     _cats.map(c => `<button class="cat-pill ${_filter===c?'active':''}" onclick="filterCat(${JSON.stringify(c)})">${c}</button>`).join("");
-
-  const sel = document.getElementById("mobile-cat-select");
-  sel.innerHTML = `<option value="todas">Todas</option>` +
-    _cats.map(c => `<option value="${c}" ${_filter===c?"selected":""}>${c}</option>`).join("");
 
   const cl = document.getElementById("cat-list-admin");
   if (cl) cl.innerHTML = _cats.map((c,i) => `
@@ -919,7 +1016,7 @@ function renderCatMenu() {
   });
 }
 
-function filterCat(cat) { _filter = cat; renderCatMenu(); renderPostList(); }
+function filterCat(cat) { _filter = cat; _currentPage = 0; renderCatMenu(); renderPostList(); }
 
 function addCategory() {
   const inp = document.getElementById("cat-new-input");
@@ -1472,14 +1569,26 @@ const SAMPLE_POSTS = [
   }
 ];
 
-function renderPostList() {
+const PAGE_SIZE = 5;
+let _currentPage = 0;
+
+function renderPostList(resetPage = false) {
+  if (resetPage) _currentPage = 0;
   const list = _filter === "todas" ? _posts : _posts.filter(p => p.category === _filter);
   const el   = document.getElementById("post-list");
+
   if (!list.length) {
     el.innerHTML = '<p class="empty-state">Nenhum post nesta categoria ainda. 🌙</p>';
     return;
   }
-  el.innerHTML = list.map((p, i) => `
+
+  const start   = _currentPage * PAGE_SIZE;
+  const page    = list.slice(start, start + PAGE_SIZE);
+  const hasMore = start + PAGE_SIZE < list.length;
+  const hasPrev = _currentPage > 0;
+  const total   = list.length;
+
+  el.innerHTML = page.map((p, i) => `
     <div class="post-card" data-pid="${escAttr(p.id)}">
       <div class="post-card-top">
         <span class="cat-badge">${p.category||"Geral"}</span>
@@ -1500,9 +1609,15 @@ function renderPostList() {
           <span class="read-more">Ler mais →</span>
         </div>
       </div>
-    </div>`).join("");
+    </div>`).join("") + `
+  <div class="pagination">
+    <span class="page-info">${start + 1}–${Math.min(start + PAGE_SIZE, total)} de ${total}</span>
+    <div class="page-btns">
+      ${hasPrev ? `<button class="page-btn" onclick="changePage(-1)">← Anterior</button>` : ""}
+      ${hasMore ? `<button class="page-btn primary" onclick="changePage(1)">Próximos →</button>` : ""}
+    </div>
+  </div>`;
 
-  // delegação de eventos — sem onclick inline, evita problemas com IDs especiais
   el.onclick = (e) => {
     const delBtn  = e.target.closest("[data-action='del']");
     const editBtn = e.target.closest("[data-action='edit']");
@@ -1513,6 +1628,12 @@ function renderPostList() {
   };
 
   renderSidebar();
+}
+
+function changePage(dir) {
+  _currentPage += dir;
+  renderPostList();
+  document.getElementById("post-list").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSidebar() {
@@ -1693,25 +1814,72 @@ async function submitComment() {
 // ═══════════════════════════════════════════════
 // GERENCIADOR DE POSTS EM LOTE
 // ═══════════════════════════════════════════════
+let _mgrSortField = "date";
+let _mgrSortDir   = "desc";
+
+function mgrSetSort(field) {
+  if (_mgrSortField === field) {
+    _mgrSortDir = _mgrSortDir === "asc" ? "desc" : "asc";
+  } else {
+    _mgrSortField = field;
+    _mgrSortDir   = field === "date" ? "desc" : "asc";
+  }
+  // sincroniza select
+  const sel = document.getElementById("mgr-sort");
+  if (sel) sel.value = `${field === "alpha" ? "alpha" : field}-${_mgrSortDir}`;
+  renderMgrList();
+}
+
 function renderMgrList() {
-  const catSel = document.getElementById("mgr-cat-target");
-  catSel.innerHTML = `<option value="">Mover para…</option>` +
-    _cats.map(c => `<option value="${c}">${c}</option>`).join("");
-
-  const el = document.getElementById("mgr-list");
-
-  if (!_posts.length) {
-    el.innerHTML = '<p class="mgr-empty">Nenhum post ainda.</p>';
-    return;
+  // popula selects de categoria
+  const filterSel = document.getElementById("mgr-filter-cat");
+  const targetSel = document.getElementById("mgr-cat-target");
+  if (filterSel) {
+    const cur = filterSel.value;
+    filterSel.innerHTML = `<option value="">Todas as cats</option>` +
+      _cats.map(c => `<option value="${c}" ${c===cur?"selected":""}>${c}</option>`).join("");
+  }
+  if (targetSel) {
+    targetSel.innerHTML = `<option value="">Mover para…</option>` +
+      _cats.map(c => `<option value="${c}">${c}</option>`).join("");
   }
 
-  el.innerHTML = _posts.map(p => `
-    <div class="mgr-row" id="mgr-${escAttr(p.id)}">
+  // lê sort do select se mudou por ele
+  const sortSel = document.getElementById("mgr-sort");
+  if (sortSel && sortSel.value) {
+    const [f, d] = sortSel.value.split("-");
+    _mgrSortField = f === "alpha" ? "alpha" : f === "cat" ? "cat" : "date";
+    _mgrSortDir   = d;
+  }
+
+  const el = document.getElementById("mgr-list");
+  if (!_posts.length) { el.innerHTML = '<p class="mgr-empty">Nenhum post ainda.</p>'; return; }
+
+  // filtra
+  const catFilter = filterSel?.value || "";
+  let list = catFilter ? _posts.filter(p => p.category === catFilter) : [..._posts];
+
+  // ordena
+  list.sort((a, b) => {
+    let va, vb;
+    if (_mgrSortField === "alpha") { va = (a.title||"").toLowerCase(); vb = (b.title||"").toLowerCase(); }
+    else if (_mgrSortField === "cat") { va = (a.category||"").toLowerCase(); vb = (b.category||"").toLowerCase(); }
+    else { va = a.dateSort||""; vb = b.dateSort||""; }
+    if (va < vb) return _mgrSortDir === "asc" ? -1 : 1;
+    if (va > vb) return _mgrSortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  if (!list.length) { el.innerHTML = '<p class="mgr-empty">Nenhum post nesta categoria.</p>'; return; }
+
+  el.innerHTML = list.map(p => `
+    <div class="mgr-row" id="mgr-${escAttr(p.id)}" style="grid-template-columns:32px 1fr 110px 90px 90px;">
       <input type="checkbox" data-pid="${escAttr(p.id)}" onchange="onMgrCheck(this)">
       <div class="mgr-row-title" title="${escAttr(p.title)}">${p.title}</div>
       <div class="mgr-row-cat">${p.category||"Geral"}</div>
       <div class="mgr-row-date">${p.date||""}</div>
       <div class="mgr-row-acts">
+        <button class="mgr-preview-btn" data-pid="${escAttr(p.id)}" onclick="openMgrPreview(this.dataset.pid)" title="Preview">👁</button>
         <button class="mgr-row-edit" data-pid="${escAttr(p.id)}" onclick="editPostInSlot(this.dataset.pid)" title="Editar">✏️</button>
         <button class="mgr-row-del"  data-pid="${escAttr(p.id)}" onclick="deletePost(this.dataset.pid)"    title="Excluir">🗑</button>
       </div>
@@ -1894,8 +2062,32 @@ function escAttr(s) {
 // INIT
 // ═══════════════════════════════════════════════
 document.addEventListener("authChanged", updateHeaderAuth);
+
+function openMgrPreview(id) {
+  const p = _posts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("mgr-preview-cat").textContent    = p.category || "Geral";
+  document.getElementById("mgr-preview-title").textContent  = p.title;
+  document.getElementById("mgr-preview-meta").textContent   = `${p.author || AUTHOR_NAME} · ${p.date || ""}`;
+  document.getElementById("mgr-preview-excerpt").textContent= p.excerpt || "";
+  document.getElementById("mgr-preview-body").innerHTML     = p.body || `<p style="color:var(--text-dim);font-style:italic;">Sem corpo formatado.</p>`;
+  const ov = document.getElementById("mgr-preview-overlay");
+  ov.style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+function closeMgrPreview(e) {
+  if (e && e.target !== document.getElementById("mgr-preview-overlay")) return;
+  document.getElementById("mgr-preview-overlay").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+// atualiza preview overlay no Escape também
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") closePostModal({ target: document.getElementById("post-modal-overlay") });
+  if (e.key === "Escape") {
+    closeMgrPreview({ target: document.getElementById("mgr-preview-overlay") });
+    closePostModal({ target: document.getElementById("post-modal-overlay") });
+  }
   if (e.target.id === "pm-comment-input" && (e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment();
 });
 
