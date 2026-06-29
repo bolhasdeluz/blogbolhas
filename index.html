@@ -1460,18 +1460,21 @@ async function saveCatEdits() {
 }
 
 // ═══════════════════════════════════════════════
-// IA
+// IA — via Cloudflare Worker (chave segura)
 // ═══════════════════════════════════════════════
+const AI_WORKER_URL = "https://blog-claude.bolhasdeluz.workers.dev";
+
 async function callAI(system, userMsg) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(AI_WORKER_URL, {
     method: "POST",
-    headers: { "Content-Type":"application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6", max_tokens: 1000,
-      system, messages: [{ role:"user", content:userMsg }]
+      system,
+      messages: [{ role: "user", content: userMsg }]
     })
   });
   const data = await res.json();
+  if (data.error) throw new Error(data.error);
   return (data.content?.find(b => b.type === "text")?.text || "").trim();
 }
 
