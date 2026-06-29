@@ -6,7 +6,6 @@
 <title>Blog — Terreiro Bolhas de Luz</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:wght@600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
@@ -15,383 +14,361 @@
     where, orderBy, onSnapshot, serverTimestamp, getDocs }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // ═══════════════════════════════════════════════
-  // CONFIGURE AQUI — cole os valores do seu projeto Firebase
-  // ═══════════════════════════════════════════════
   const firebaseConfig = {
-    apiKey:            "COLE_AQUI",
-    authDomain:        "COLE_AQUI",
-    projectId:         "COLE_AQUI",
-    storageBucket:     "COLE_AQUI",
-    messagingSenderId: "COLE_AQUI",
-    appId:             "COLE_AQUI"
+    apiKey:"COLE_AQUI", authDomain:"COLE_AQUI", projectId:"COLE_AQUI",
+    storageBucket:"COLE_AQUI", messagingSenderId:"COLE_AQUI", appId:"COLE_AQUI"
   };
 
-  const app  = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db   = getFirestore(app);
-  const provider = new GoogleAuthProvider();
+  const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getFirestore(app);
+  const provider=new GoogleAuthProvider();
 
-  window._fbSignIn  = () => signInWithPopup(auth, provider).catch(console.error);
-  window._fbSignOut = () => signOut(auth);
+  window._fbSignIn  = ()=>signInWithPopup(auth,provider).catch(console.error);
+  window._fbSignOut = ()=>signOut(auth);
+  onAuthStateChanged(auth,user=>{ window._currentUser=user||null; document.dispatchEvent(new CustomEvent("authChanged",{detail:user})); });
 
-  onAuthStateChanged(auth, user => {
-    window._currentUser = user || null;
-    document.dispatchEvent(new CustomEvent("authChanged", { detail: user }));
-  });
-
-  // ─── Comentários ──────────────────────────────
-  window._loadComments = (postId, cb) => {
-    const q = query(collection(db,"comments"), where("postId","==",postId), orderBy("createdAt","asc"));
-    return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id:d.id, ...d.data() }))));
+  window._loadComments=(postId,cb)=>{
+    const q=query(collection(db,"comments"),where("postId","==",postId),orderBy("createdAt","asc"));
+    return onSnapshot(q,snap=>cb(snap.docs.map(d=>({id:d.id,...d.data()}))));
   };
-  window._addComment = async (postId, text) => {
-    const u = window._currentUser;
-    if (!u) return;
-    await addDoc(collection(db,"comments"), {
-      postId, text,
-      authorName: u.displayName, authorPhoto: u.photoURL, authorUid: u.uid,
-      createdAt: serverTimestamp()
-    });
+  window._addComment=async(postId,text)=>{
+    const u=window._currentUser; if(!u)return;
+    await addDoc(collection(db,"comments"),{postId,text,authorName:u.displayName,authorPhoto:u.photoURL,authorUid:u.uid,createdAt:serverTimestamp()});
   };
-
-  // ─── Posts no Firestore ────────────────────────
-  window._savePosts = async (posts) => {
-    for (const p of posts) {
-      await setDoc(doc(db,"posts",p.id), p);
-    }
+  window._savePosts=async(posts)=>{ for(const p of posts) await setDoc(doc(db,"posts",p.id),p); };
+  window._deletePost=async(id)=>deleteDoc(doc(db,"posts",id));
+  window._loadPosts=(cb)=>{
+    const q=query(collection(db,"posts"),orderBy("dateSort","desc"));
+    return onSnapshot(q,snap=>cb(snap.docs.map(d=>({id:d.id,...d.data()}))));
   };
-  window._deletePost = async (id) => {
-    await deleteDoc(doc(db,"posts",id));
-  };
-  window._loadPosts = (cb) => {
-    const q = query(collection(db,"posts"), orderBy("dateSort","desc"));
-    return onSnapshot(q, snap => cb(snap.docs.map(d => ({ id:d.id, ...d.data() }))));
-  };
-
-  // ─── Categorias no Firestore ───────────────────
-  window._saveCategories = async (cats) => {
-    await setDoc(doc(db,"config","categories"), { list: cats });
-  };
-  window._loadCategories = async () => {
-    const snap = await getDocs(collection(db,"config"));
-    const d = snap.docs.find(d => d.id === "categories");
-    return d ? d.data().list : null;
+  window._saveCategories=async(cats)=>setDoc(doc(db,"config","categories"),{list:cats});
+  window._loadCategories=async()=>{
+    const snap=await getDocs(collection(db,"config"));
+    const d=snap.docs.find(d=>d.id==="categories");
+    return d?d.data().list:null;
   };
 </script>
 
 <style>
-/* ═══════════════════════════════════════════
-   TOKENS
-═══════════════════════════════════════════ */
-:root {
-  --gold:      #c4396b;
-  --gold-light:#e8688a;
-  --gold-dim:  rgba(196,57,107,.08);
-  --bg:        #fff5f7;
-  --surface:   #ffffff;
-  --border:    rgba(196,57,107,.15);
-  --text:      #2a1a22;
-  --text-dim:  rgba(80,30,50,.5);
-  --red:       #b84040;
-  --red-dim:   rgba(184,64,64,.08);
-  --green:     #2a7a60;
-  --green-dim: rgba(42,122,96,.08);
+:root{
+  --gold:#c4396b;--gold-light:#e8688a;--gold-dim:rgba(196,57,107,.08);
+  --bg:#fff5f7;--surface:#ffffff;--border:rgba(196,57,107,.15);
+  --text:#2a1a22;--text-dim:rgba(80,30,50,.5);
+  --red:#b84040;--red-dim:rgba(184,64,64,.08);
+  --green:#2a7a60;--green-light:#3a9a78;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;}
 
-/* ─── HEADER ─────────────────────────────── */
-.site-header{
-  background:linear-gradient(135deg,#c0405a,#d4607a 60%,#e07a90);
-  box-shadow:0 2px 20px rgba(180,60,90,.25);
-  position:sticky;top:0;z-index:200;
-  padding:0 1.25rem;
-}
-.header-inner{
-  max-width:900px;margin:0 auto;height:54px;
-  display:flex;align-items:center;gap:.75rem;
-}
-.site-logo{
-  font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;
-  letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(255,255,255,.92);text-decoration:none;
-  display:flex;align-items:center;gap:.4rem;flex-shrink:0;
-  cursor:pointer;background:none;border:none;
-}
+/* HEADER */
+.site-header{background:linear-gradient(135deg,#c0405a,#d4607a 60%,#e07a90);box-shadow:0 2px 20px rgba(180,60,90,.25);position:sticky;top:0;z-index:200;padding:0 1.25rem;}
+.header-inner{max-width:960px;margin:0 auto;height:54px;display:flex;align-items:center;gap:.75rem;}
+.site-logo{font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.92);display:flex;align-items:center;gap:.4rem;flex-shrink:0;cursor:pointer;background:none;border:none;}
 .site-logo span{font-size:1.05rem;}
-.header-cats{
-  display:flex;align-items:center;gap:.3rem;flex:1;
-  overflow-x:auto;scrollbar-width:none;padding:0 .25rem;
-}
+.header-cats{display:flex;align-items:center;gap:.3rem;flex:1;overflow-x:auto;scrollbar-width:none;padding:0 .2rem;}
 .header-cats::-webkit-scrollbar{display:none;}
-.cat-pill{
-  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
-  border-radius:20px;color:rgba(255,255,255,.8);
-  font-family:'DM Sans',sans-serif;font-size:.72rem;
-  padding:4px 11px;cursor:pointer;white-space:nowrap;
-  transition:background .16s,color .16s;flex-shrink:0;
-}
+.cat-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:rgba(255,255,255,.8);font-family:'DM Sans',sans-serif;font-size:.72rem;padding:4px 11px;cursor:pointer;white-space:nowrap;transition:background .16s;flex-shrink:0;}
 .cat-pill:hover{background:rgba(255,255,255,.22);}
 .cat-pill.active{background:rgba(255,255,255,.9);color:var(--gold);font-weight:500;}
 .header-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0;}
-.btn-pill{
-  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);
-  border-radius:20px;color:rgba(255,255,255,.85);
-  font-family:'DM Sans',sans-serif;font-size:.72rem;
-  padding:5px 12px;cursor:pointer;transition:background .16s;white-space:nowrap;
-}
+.btn-pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);border-radius:20px;color:rgba(255,255,255,.85);font-family:'DM Sans',sans-serif;font-size:.72rem;padding:5px 12px;cursor:pointer;transition:background .16s;white-space:nowrap;}
 .btn-pill:hover{background:rgba(255,255,255,.25);}
-.btn-pill.user-pill{background:rgba(255,255,255,.9);color:var(--gold);}
+.btn-pill.active{background:rgba(255,255,255,.9);color:var(--gold);}
 .user-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6);flex-shrink:0;}
 
-/* ─── LAYOUT ─────────────────────────────── */
-.main-wrap{max-width:900px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+/* LAYOUT */
+.main-wrap{max-width:960px;margin:0 auto;padding:2rem 1.25rem 5rem;}
 
-/* ─── HERO ───────────────────────────────── */
-.blog-hero{
-  background:linear-gradient(135deg,#fde8ed,#fce8ef);
-  border-bottom:1px solid var(--border);
-  padding:2.5rem 1.25rem 2rem;text-align:center;
-  margin:-2rem -1.25rem 2rem;
-}
-.hero-eyebrow{font-family:'Cinzel',serif;font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem;}
-.hero-title{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,5vw,2.6rem);font-weight:600;color:var(--text);line-height:1.2;margin-bottom:.6rem;}
-.hero-sub{font-family:'Crimson Pro',serif;font-size:1rem;color:var(--text-dim);font-style:italic;}
+/* HERO */
+.blog-hero{background:linear-gradient(135deg,#fde8ed,#fce8ef);border-bottom:1px solid var(--border);padding:2.2rem 1.25rem 1.8rem;text-align:center;margin:-2rem -1.25rem 0;}
+.hero-eyebrow{font-family:'Cinzel',serif;font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:600;color:var(--text);line-height:1.2;margin-bottom:.5rem;}
+.hero-sub{font-family:'Crimson Pro',serif;font-size:.98rem;color:var(--text-dim);font-style:italic;}
 
-/* ─── GRID DE POSTS ──────────────────────── */
-#post-list{display:grid;gap:1.2rem;}
-.post-card{
-  background:var(--surface);border-radius:12px;
-  box-shadow:0 2px 16px rgba(180,60,90,.07);
-  overflow:hidden;cursor:pointer;
-  transition:transform .22s,box-shadow .22s;
+/* ═══════════════════════════════
+   ÁREA DE REDAÇÃO RÁPIDA (admin)
+═══════════════════════════════ */
+#quick-compose{
+  background:linear-gradient(135deg,#2a1a22,#3d2232);
+  border-radius:0 0 16px 16px;
+  margin:0 -1.25rem 2rem;
+  padding:1.4rem 1.25rem;
 }
+.qc-header{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  margin-bottom:1.2rem;flex-wrap:wrap;
+}
+.qc-title{
+  font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);
+  display:flex;align-items:center;gap:.5rem;
+}
+.qc-title span{color:var(--gold-light);}
+.qc-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+
+/* Slots de post */
+#slots-container{display:grid;gap:1rem;}
+
+.slot{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(196,57,107,.25);
+  border-radius:12px;
+  overflow:hidden;
+  animation:fadeIn .25s ease both;
+}
+.slot-head{
+  background:rgba(196,57,107,.15);
+  padding:.65rem 1rem;
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.slot-num{
+  font-family:'Cinzel',serif;font-size:.6rem;font-weight:700;
+  letter-spacing:.12em;color:rgba(255,255,255,.5);text-transform:uppercase;
+}
+.slot-head-fields{display:flex;gap:.5rem;flex:1;flex-wrap:wrap;}
+.slot-input-sm{
+  background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);
+  border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;
+  padding:5px 9px;outline:none;transition:border-color .16s;
+}
+.slot-input-sm::placeholder{color:rgba(255,255,255,.35);}
+.slot-input-sm:focus{border-color:var(--gold-light);}
+.slot-input-sm.title-field{flex:1;min-width:160px;}
+.slot-select{
+  background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);
+  border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.8rem;
+  padding:5px 8px;outline:none;cursor:pointer;
+}
+.slot-select option{background:#3d2232;color:#fff;}
+.slot-date{width:130px;}
+.slot-remove{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;flex-shrink:0;transition:color .16s;}
+.slot-remove:hover{color:var(--red);}
+
+.slot-body{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+}
+.slot-col{
+  padding:.9rem 1rem;
+  display:flex;flex-direction:column;gap:.5rem;
+}
+.slot-col:first-child{border-right:1px solid rgba(196,57,107,.15);}
+.slot-col-label{
+  font-family:'Cinzel',serif;font-size:.58rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);
+}
+.slot-textarea{
+  flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(196,57,107,.15);
+  border-radius:6px;color:rgba(255,255,255,.88);
+  font-family:'Crimson Pro',serif;font-size:.93rem;
+  padding:8px 10px;resize:vertical;min-height:110px;outline:none;
+  line-height:1.55;transition:border-color .16s;
+}
+.slot-textarea:focus{border-color:rgba(196,57,107,.5);}
+.slot-textarea.raw{font-style:italic;color:rgba(255,255,255,.6);}
+.slot-textarea.resume{color:rgba(255,255,255,.88);}
+.slot-col-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem;}
+
+/* Botões dentro do slot */
+.btn-slot{
+  background:rgba(196,57,107,.25);border:1px solid rgba(196,57,107,.35);
+  border-radius:5px;color:rgba(255,255,255,.85);
+  font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;font-weight:700;
+  text-transform:uppercase;padding:5px 11px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:.3rem;transition:background .16s;
+}
+.btn-slot:hover{background:rgba(196,57,107,.4);}
+.btn-slot:disabled{opacity:.4;cursor:not-allowed;}
+.btn-slot.green{background:rgba(42,122,96,.3);border-color:rgba(42,122,96,.4);}
+.btn-slot.green:hover{background:rgba(42,122,96,.45);}
+.slot-spinner{display:none;width:13px;height:13px;border:2px solid rgba(255,255,255,.15);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:spin .7s linear infinite;}
+
+/* Botão publicar lote */
+.btn-publish-batch{
+  background:linear-gradient(135deg,var(--gold),var(--gold-light));
+  border:none;border-radius:8px;color:#fff;
+  font-family:'Cinzel',serif;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 24px;cursor:pointer;transition:opacity .16s,transform .1s;
+  display:inline-flex;align-items:center;gap:.45rem;
+}
+.btn-publish-batch:hover{opacity:.9;}
+.btn-publish-batch:active{transform:scale(.97);}
+.btn-publish-batch:disabled{opacity:.4;cursor:not-allowed;}
+
+.btn-add-slot{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;color:rgba(255,255,255,.7);
+  font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 18px;cursor:pointer;transition:background .16s;
+  display:inline-flex;align-items:center;gap:.4rem;
+}
+.btn-add-slot:hover{background:rgba(255,255,255,.14);}
+
+/* ═══════════════════════════════
+   GRID DE POSTS
+═══════════════════════════════ */
+#post-list{display:grid;gap:1.1rem;margin-top:2rem;}
+.post-card{background:var(--surface);border-radius:12px;box-shadow:0 2px 16px rgba(180,60,90,.07);overflow:hidden;cursor:pointer;transition:transform .22s,box-shadow .22s;}
 .post-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(180,60,90,.13);}
-.post-card-top{
-  background:linear-gradient(135deg,#fde8ed,#fce8ef);
-  padding:.7rem 1.1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
-}
-.cat-badge{
-  background:#fce8ef;color:#d4607a;border-radius:20px;
-  font-family:'Cinzel',serif;font-size:.62rem;font-weight:500;
-  letter-spacing:.04em;padding:2px 9px;text-transform:uppercase;
-}
+.post-card-top{background:linear-gradient(135deg,#fde8ed,#fce8ef);padding:.65rem 1.1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.cat-badge{background:#fce8ef;color:#d4607a;border-radius:20px;font-family:'Cinzel',serif;font-size:.62rem;font-weight:500;letter-spacing:.04em;padding:2px 9px;text-transform:uppercase;}
+.post-author-badge{font-size:.7rem;color:var(--text-dim);display:flex;align-items:center;gap:.3rem;}
 .post-date{font-size:.72rem;color:var(--text-dim);margin-left:auto;}
-.post-card-body{padding:1.1rem 1.3rem 1.2rem;}
-.post-card-title{font-family:'Playfair Display',serif;font-size:1.02rem;font-weight:600;color:var(--text);margin-bottom:.4rem;line-height:1.35;}
-.post-card-excerpt{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text-dim);line-height:1.55;}
-.post-card-footer{
-  padding:.7rem 1.3rem;border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.comment-count{font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:.3rem;}
+.post-card-body{padding:1rem 1.2rem 1.1rem;}
+.post-card-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.35rem;line-height:1.35;}
+.post-card-excerpt{font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text-dim);line-height:1.55;}
+.post-card-footer{padding:.65rem 1.2rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.comment-count{font-size:.74rem;color:var(--text-dim);}
 .read-more{font-family:'Cinzel',serif;font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);}
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-dim);font-family:'Crimson Pro',serif;font-style:italic;font-size:1rem;}
+.admin-post-btns{display:flex;gap:.35rem;}
+.btn-edit-post{background:none;border:1px solid var(--border);border-radius:5px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;padding:3px 9px;cursor:pointer;transition:border-color .14s,color .14s;}
+.btn-edit-post:hover{border-color:var(--gold);color:var(--gold);}
+.btn-del-post{background:none;border:1px solid rgba(184,64,64,.2);border-radius:5px;color:var(--red);font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.08em;padding:3px 9px;cursor:pointer;transition:background .14s;}
+.btn-del-post:hover{background:var(--red-dim);}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-dim);font-family:'Crimson Pro',serif;font-style:italic;}
 
-/* ─── POST FULL ──────────────────────────── */
+/* CATEGORIAS admin panel */
+.cat-panel{background:rgba(255,255,255,.06);border:1px solid rgba(196,57,107,.2);border-radius:8px;padding:.9rem 1rem;margin-top:.8rem;}
+.cat-panel-title{font-family:'Cinzel',serif;font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:.6rem;}
+.cat-list-admin{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;}
+.cat-chip{display:flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.08);border:1px solid rgba(196,57,107,.2);border-radius:5px;padding:3px 9px;}
+.cat-chip span{font-family:'DM Sans',sans-serif;font-size:.78rem;color:rgba(255,255,255,.75);}
+.cat-chip-rm{background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:.85rem;line-height:1;padding:0 2px;}
+.cat-chip-rm:hover{color:var(--red);}
+.cat-add-row{display:flex;gap:.4rem;}
+
+/* POST FULL VIEW */
 #post-view{display:none;}
-.back-btn{
-  background:none;border:1px solid var(--border);border-radius:6px;
-  color:var(--text-dim);font-family:'Cinzel',serif;font-size:.62rem;
-  letter-spacing:.1em;font-weight:600;text-transform:uppercase;
-  padding:7px 14px;cursor:pointer;margin-bottom:1.5rem;
-  transition:border-color .16s,color .16s;display:inline-flex;align-items:center;gap:.4rem;
-}
+.back-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;padding:7px 14px;cursor:pointer;margin-bottom:1.5rem;transition:border-color .16s,color .16s;display:inline-flex;align-items:center;gap:.4rem;}
 .back-btn:hover{border-color:var(--gold);color:var(--gold);}
 .post-full-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,4vw,2rem);font-weight:600;color:var(--text);line-height:1.25;margin-bottom:.6rem;}
 .post-author-row{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-dim);}
 .author-avatar-sm{width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid var(--border);}
 .post-divider{height:1px;background:var(--border);margin:1.4rem 0 1.8rem;}
-.post-body{font-family:'Crimson Pro',serif;font-size:1.06rem;line-height:1.78;color:var(--text);}
+.post-body{font-family:'Crimson Pro',serif;font-size:1.06rem;line-height:1.78;color:var(--text);max-width:680px;}
 .post-body p{margin-bottom:1.1em;}
 .post-body h2{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:600;color:var(--text);margin:1.7em 0 .55em;}
 .post-body h3{font-family:'Cinzel',serif;font-size:.78rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:1.3em 0 .45em;}
 .post-body blockquote{border-left:3px solid var(--gold);padding:.55rem .9rem;margin:1.1em 0;background:var(--gold-dim);border-radius:0 6px 6px 0;font-style:italic;color:var(--text-dim);}
 
-/* ─── COMENTÁRIOS ────────────────────────── */
+/* COMENTÁRIOS */
 .comments-section{margin-top:2.8rem;padding-top:1.8rem;border-top:1px solid var(--border);}
-.comments-title{font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1.3rem;}
-.auth-gate{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.3rem;text-align:center;margin-bottom:1.5rem;}
+.comments-title{font-family:'Cinzel',serif;font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem;}
+.auth-gate{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem;text-align:center;margin-bottom:1.4rem;}
 .auth-gate p{font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text-dim);margin-bottom:.8rem;font-style:italic;}
 .btn-google{display:inline-flex;align-items:center;gap:.45rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--text);cursor:pointer;transition:box-shadow .16s,border-color .16s;}
 .btn-google:hover{border-color:var(--gold);box-shadow:0 2px 10px rgba(196,57,107,.1);}
 .btn-google svg{width:17px;height:17px;flex-shrink:0;}
-.comment-form{margin-bottom:1.6rem;}
-.comment-user-row{display:flex;align-items:center;gap:.55rem;margin-bottom:.7rem;}
-.comment-user-name{font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:var(--text);flex:1;}
-.btn-signout{background:none;border:none;font-size:.72rem;color:var(--text-dim);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.comment-form-wrap{margin-bottom:1.5rem;}
+.comment-user-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem;}
+.comment-user-name{font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;flex:1;}
+.btn-signout{background:none;border:none;font-size:.72rem;color:var(--text-dim);cursor:pointer;text-decoration:underline;}
 .btn-signout:hover{color:var(--red);}
 .comment-textarea{width:100%;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Crimson Pro',serif;font-size:1rem;padding:9px 11px;resize:vertical;min-height:76px;transition:border-color .16s;outline:none;}
 .comment-textarea:focus{border-color:var(--gold);}
 .comment-textarea::placeholder{color:var(--text-dim);font-style:italic;}
+.btn-primary{background:var(--gold);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;font-weight:700;padding:9px 22px;cursor:pointer;transition:background .16s;}
+.btn-primary:hover{background:var(--gold-light);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
 #comments-list{display:grid;gap:.9rem;}
-.comment-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.95rem 1.05rem;animation:fadeIn .25s ease both;}
+.comment-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;animation:fadeIn .25s ease both;}
 .comment-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;}
 .comment-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0;}
-.comment-author{font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;color:var(--text);}
+.comment-author{font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;}
 .comment-time{font-size:.7rem;color:var(--text-dim);margin-left:auto;}
-.comment-text{font-family:'Crimson Pro',serif;font-size:.95rem;color:var(--text);line-height:1.52;}
-.comments-empty{font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text-dim);font-style:italic;text-align:center;padding:1rem 0;}
+.comment-text{font-family:'Crimson Pro',serif;font-size:.93rem;line-height:1.52;}
+.comments-empty{font-family:'Crimson Pro',serif;font-size:.9rem;color:var(--text-dim);font-style:italic;text-align:center;padding:1rem 0;}
 
-/* ─── BOTÕES ─────────────────────────────── */
-.btn-primary{background:var(--gold);border:none;border-radius:8px;color:#fff;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;font-weight:700;padding:9px 22px;cursor:pointer;transition:background .16s,transform .1s;}
-.btn-primary:hover{background:var(--gold-light);}
-.btn-primary:active{transform:scale(.97);}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-.btn-secondary{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;padding:9px 18px;cursor:pointer;transition:border-color .16s,color .16s;}
-.btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
-.btn-danger{background:var(--red-dim);border:1px solid rgba(184,64,64,.2);border-radius:6px;color:var(--red);font-family:'Cinzel',serif;font-size:10px;letter-spacing:.08em;padding:7px 14px;cursor:pointer;transition:background .16s;}
-.btn-danger:hover{background:rgba(184,64,64,.15);}
-
-/* ─── PAINEL ADMIN ───────────────────────── */
-#admin-view{display:none;}
-.admin-header{
-  background:linear-gradient(135deg,#c0405a,#d4607a);
-  border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.5rem;
-  display:flex;align-items:center;justify-content:space-between;gap:1rem;
-}
-.admin-header h2{font-family:'Cinzel',serif;font-size:.75rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#fff;}
-.admin-tabs{display:flex;gap:.4rem;margin-bottom:1.5rem;}
-.admin-tab{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:all .16s;}
-.admin-tab.active{background:var(--gold);border-color:var(--gold);color:#fff;}
-
-/* Lista de posts no admin */
-.admin-post-list{display:grid;gap:.8rem;margin-bottom:1.5rem;}
-.admin-post-item{
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:.9rem 1.1rem;display:flex;align-items:center;gap:.8rem;
-}
-.admin-post-item-info{flex:1;min-width:0;}
-.admin-post-item-title{font-family:'Playfair Display',serif;font-size:.92rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.admin-post-item-meta{font-size:.72rem;color:var(--text-dim);margin-top:.2rem;}
-.admin-post-actions{display:flex;gap:.4rem;flex-shrink:0;}
-
-/* Formulário de post */
-.post-form{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.4rem;}
-.form-section-title{font-family:'Cinzel',serif;font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem;margin-top:1.4rem;}
-.form-section-title:first-child{margin-top:0;}
-.form-row{display:grid;gap:.8rem;margin-bottom:.8rem;}
-.form-row.cols-2{grid-template-columns:1fr 1fr;}
-.form-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
-.form-group{display:flex;flex-direction:column;gap:.35rem;}
-.form-label{font-family:'Cinzel',serif;font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);}
-.form-input,.form-select,.form-textarea{
-  background:transparent;border:1px solid var(--border);border-radius:6px;
-  color:var(--text);font-family:'Crimson Pro',serif;font-size:.97rem;
-  padding:9px 11px;transition:border-color .16s;outline:none;width:100%;
-}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold);}
-.form-textarea{resize:vertical;line-height:1.55;}
-.form-textarea.raw{min-height:140px;font-style:italic;color:var(--text-dim);}
-.form-textarea.body{min-height:220px;}
-
-/* Área de IA */
-.ai-zone{background:var(--gold-dim);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem;margin:.8rem 0;}
-.ai-zone-header{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem;flex-wrap:wrap;}
-.ai-zone-label{font-family:'Cinzel',serif;font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);}
-.ai-zone-actions{display:flex;gap:.4rem;flex-wrap:wrap;}
-.btn-ai{
-  background:var(--gold);border:none;border-radius:6px;color:#fff;
-  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.08em;font-weight:700;
-  padding:6px 14px;cursor:pointer;transition:background .16s;
-  display:inline-flex;align-items:center;gap:.35rem;
-}
-.btn-ai:hover{background:var(--gold-light);}
-.btn-ai:disabled{opacity:.5;cursor:not-allowed;}
-.ai-hint{font-family:'Crimson Pro',serif;font-size:.85rem;color:var(--text-dim);font-style:italic;}
-.ai-spinner{display:none;width:16px;height:16px;border:2px solid rgba(196,57,107,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
-
-/* Categorias no admin */
-.cat-admin-list{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.9rem;}
-.cat-admin-item{
-  display:flex;align-items:center;gap:.35rem;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;padding:5px 10px;
-}
-.cat-admin-name{font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--text);}
-.cat-admin-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px;}
-.cat-admin-remove:hover{color:var(--red);}
-.cat-add-row{display:flex;gap:.5rem;}
-.cat-add-input{flex:1;}
-
-/* Login admin */
-.admin-login{max-width:340px;margin:4rem auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2rem;text-align:center;}
-.admin-login h2{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:600;margin-bottom:.5rem;}
-.admin-login p{font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text-dim);font-style:italic;margin-bottom:1.3rem;}
-
-/* ─── TOAST ──────────────────────────────── */
+/* MISC */
 .toast{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(20px);background:#fff;border:1px solid var(--gold);color:var(--gold);border-radius:7px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;box-shadow:0 4px 20px rgba(196,57,107,.15);padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.error{border-color:var(--red);color:var(--red);}
+.spinner{width:22px;height:22px;border:2px solid rgba(196,57,107,.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:1.2rem auto;}
+.mobile-cat-select{display:none;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:5px 10px;cursor:pointer;}
+.mobile-cat-select option{background:#c4396b;}
 
-/* ─── SPINNER ────────────────────────────── */
-.spinner{width:22px;height:22px;border:2px solid rgba(196,57,107,.15);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:1rem auto;}
-
-/* ─── ANIMATIONS ─────────────────────────── */
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-@media(max-width:580px){
-  .form-row.cols-2,.form-row.cols-3{grid-template-columns:1fr;}
-  .admin-post-item{flex-direction:column;align-items:flex-start;}
+@media(max-width:640px){
+  .slot-body{grid-template-columns:1fr;}
+  .slot-col:first-child{border-right:none;border-bottom:1px solid rgba(196,57,107,.15);}
   .header-cats{display:none;}
   .mobile-cat-select{display:block;}
+  .slot-head-fields{gap:.4rem;}
+  .slot-input-sm.title-field{width:100%;}
 }
-.mobile-cat-select{display:none;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:.75rem;padding:5px 10px;cursor:pointer;}
-.mobile-cat-select option{background:#c4396b;color:#fff;}
 </style>
 </head>
 <body>
 
-<!-- ═══ HEADER ═══════════════════════════════════════ -->
+<!-- HEADER -->
 <header class="site-header">
   <div class="header-inner">
-    <button class="site-logo" onclick="showView('list')">
-      <span>🕯️</span> Bolhas de Luz
-    </button>
-    <!-- Filtro de categorias (desktop) -->
+    <button class="site-logo" onclick="showView('list')"><span>🕯️</span> Bolhas de Luz</button>
     <nav class="header-cats" id="header-cats"></nav>
-    <!-- Filtro mobile -->
-    <select class="mobile-cat-select" id="mobile-cat-select" onchange="filterCat(this.value)">
-      <option value="todas">Todas</option>
-    </select>
+    <select class="mobile-cat-select" id="mobile-cat-select" onchange="filterCat(this.value)"><option value="todas">Todas</option></select>
     <div class="header-actions" id="header-auth">
       <button class="btn-pill" onclick="window._fbSignIn()">Entrar</button>
     </div>
   </div>
 </header>
 
-<!-- ═══ MAIN ══════════════════════════════════════════ -->
 <main class="main-wrap">
 
-  <!-- ─── LISTA DE POSTS ──────────────────────────── -->
+  <!-- ═══ LISTA ═══ -->
   <div id="list-view">
     <div class="blog-hero">
       <p class="hero-eyebrow">Terreiro Bolhas de Luz · Porto Alegre</p>
       <h1 class="hero-title">Palavras do Terreiro</h1>
       <p class="hero-sub">Ensinamentos, avisos e histórias da nossa gira.</p>
     </div>
+
+    <!-- ÁREA DE REDAÇÃO RÁPIDA — só aparece pra admin -->
+    <div id="quick-compose" style="display:none;">
+      <div class="qc-header">
+        <p class="qc-title">✍️ Redação rápida <span>— admin</span></p>
+        <div class="qc-actions">
+          <button class="btn-add-slot" onclick="addSlot()">+ Adicionar post</button>
+          <button class="btn-publish-batch" id="btn-publish-all" onclick="publishAll()">
+            <span id="batch-spinner" class="slot-spinner" style="border-top-color:#fff;"></span>
+            🚀 Publicar todos
+          </button>
+        </div>
+      </div>
+
+      <!-- Gerenciar categorias -->
+      <div class="cat-panel">
+        <p class="cat-panel-title">Categorias</p>
+        <div class="cat-list-admin" id="cat-list-admin"></div>
+        <div class="cat-add-row">
+          <input type="text" class="slot-input-sm" id="cat-new-input" placeholder="Nova categoria…" style="flex:1;" onkeydown="if(event.key==='Enter')addCategory()">
+          <button class="btn-slot" onclick="addCategory()">+ Adicionar</button>
+          <button class="btn-slot green" onclick="saveCategories()">💾 Salvar</button>
+        </div>
+      </div>
+
+      <div id="slots-container" style="margin-top:1rem;"></div>
+    </div>
+
     <div id="post-list"><div class="spinner"></div></div>
   </div>
 
-  <!-- ─── POST INDIVIDUAL ─────────────────────────── -->
-  <div id="post-view" style="display:none;">
+  <!-- ═══ POST FULL ═══ -->
+  <div id="post-view">
     <button class="back-btn" onclick="showView('list')">← Voltar</button>
     <article>
-      <div id="post-meta-badges" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;"></div>
-      <h1 class="post-full-title" id="post-full-title"></h1>
+      <div id="pv-badges" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;"></div>
+      <h1 class="post-full-title" id="pv-title"></h1>
       <div class="post-author-row">
         <img src="https://ui-avatars.com/api/?name=Bolhas+de+Luz&background=c4396b&color=fff&size=56" class="author-avatar-sm" alt="">
-        <span>Mãe Anna · Terreiro Bolhas de Luz</span>
+        <span id="pv-author">Mãe Anna · Terreiro Bolhas de Luz</span>
         <span>·</span>
-        <span id="post-full-date"></span>
+        <span id="pv-date"></span>
       </div>
       <div class="post-divider"></div>
-      <div class="post-body" id="post-full-body"></div>
+      <div class="post-body" id="pv-body"></div>
     </article>
-
-    <!-- Comentários -->
     <section class="comments-section">
       <p class="comments-title">💬 Comentários</p>
       <div id="comment-auth-gate" class="auth-gate">
@@ -401,360 +378,397 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           Continuar com Google
         </button>
       </div>
-      <div id="comment-form-wrap" class="comment-form" style="display:none;">
+      <div id="comment-form-wrap" class="comment-form-wrap" style="display:none;">
         <div class="comment-user-row">
           <img src="" alt="" class="comment-avatar" id="form-user-avatar">
           <span class="comment-user-name" id="form-user-name"></span>
           <button class="btn-signout" onclick="window._fbSignOut()">Sair</button>
         </div>
         <textarea class="comment-textarea" id="comment-input" placeholder="Escreva um comentário… (Ctrl+Enter para enviar)" rows="3"></textarea>
-        <button class="btn-primary" id="comment-submit-btn" onclick="submitComment()" style="margin-top:.55rem;">Publicar comentário</button>
+        <button class="btn-primary" id="btn-comment-submit" onclick="submitComment()" style="margin-top:.55rem;">Publicar</button>
       </div>
       <div id="comments-list"></div>
     </section>
   </div>
 
-  <!-- ─── ADMIN ────────────────────────────────────── -->
-  <div id="admin-view" style="display:none;">
-
-    <!-- Login -->
-    <div id="admin-login-screen" class="admin-login">
-      <h2>Painel Admin</h2>
-      <p>Digite a senha para acessar o painel do terreiro.</p>
-      <div class="form-group" style="margin-bottom:.8rem;">
-        <input type="password" class="form-input" id="admin-pwd-input" placeholder="Senha" onkeydown="if(e.key==='Enter')checkAdminPwd()">
-      </div>
-      <button class="btn-primary" onclick="checkAdminPwd()" style="width:100%;">Entrar</button>
-    </div>
-
-    <!-- Painel -->
-    <div id="admin-panel" style="display:none;">
-      <div class="admin-header">
-        <h2>🕯️ Painel Admin</h2>
-        <button class="btn-pill" onclick="showView('list')">← Blog</button>
-      </div>
-
-      <div class="admin-tabs">
-        <button class="admin-tab active" onclick="adminTab('posts',this)">Posts</button>
-        <button class="admin-tab" onclick="adminTab('new',this)">Novo Post</button>
-        <button class="admin-tab" onclick="adminTab('cats',this)">Categorias</button>
-      </div>
-
-      <!-- TAB: Lista posts -->
-      <div id="admin-tab-posts">
-        <div class="admin-post-list" id="admin-post-list"><div class="spinner"></div></div>
-      </div>
-
-      <!-- TAB: Novo / editar post -->
-      <div id="admin-tab-new" style="display:none;">
-        <div class="post-form">
-          <input type="hidden" id="edit-post-id">
-
-          <p class="form-section-title">Identificação</p>
-          <div class="form-row cols-3">
-            <div class="form-group">
-              <label class="form-label">Categoria</label>
-              <select class="form-select" id="f-category"></select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Data de publicação</label>
-              <input type="date" class="form-input" id="f-date">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Slug (ID único)</label>
-              <input type="text" class="form-input" id="f-slug" placeholder="ex: primeiro-post">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Título</label>
-              <input type="text" class="form-input" id="f-title" placeholder="Título do post" oninput="autoSlug()">
-            </div>
-          </div>
-
-          <!-- Zona de IA -->
-          <p class="form-section-title">Texto bruto (do WhatsApp ou outro blog)</p>
-          <div class="ai-zone">
-            <div class="ai-zone-header">
-              <span class="ai-zone-label">✨ Assistente de texto</span>
-              <div class="ai-zone-actions">
-                <button class="btn-ai" onclick="aiFormat()" id="btn-ai-format">
-                  <span id="ai-spinner-format" class="ai-spinner"></span>
-                  Formatar texto
-                </button>
-                <button class="btn-ai" onclick="aiExcerpt()" id="btn-ai-excerpt" style="background:var(--green);">
-                  <span id="ai-spinner-excerpt" class="ai-spinner"></span>
-                  Gerar resumo
-                </button>
-              </div>
-            </div>
-            <p class="ai-hint">Cole o texto bruto aqui. A IA vai limpar, estruturar e gerar o resumo para a listagem.</p>
-            <textarea class="form-textarea raw" id="f-raw" placeholder="Cole aqui o texto do WhatsApp, outro blog, ou qualquer rascunho…"></textarea>
-          </div>
-
-          <p class="form-section-title">Conteúdo formatado (HTML)</p>
-          <div class="form-group" style="margin-bottom:.8rem;">
-            <label class="form-label">Corpo do post</label>
-            <textarea class="form-textarea body" id="f-body" placeholder="HTML do post. Use &lt;p&gt;, &lt;h2&gt;, &lt;h3&gt;, &lt;blockquote&gt;…"></textarea>
-          </div>
-
-          <p class="form-section-title">Resumo (aparece na listagem)</p>
-          <div class="form-group" style="margin-bottom:1.2rem;">
-            <label class="form-label">Excerpt</label>
-            <textarea class="form-textarea" id="f-excerpt" rows="3" placeholder="Resumo curto do post (2-3 frases)"></textarea>
-          </div>
-
-          <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-            <button class="btn-primary" onclick="savePost()">💾 Salvar post</button>
-            <button class="btn-secondary" onclick="clearForm()">Limpar</button>
-            <button class="btn-secondary" onclick="previewPost()" style="margin-left:auto;">👁 Visualizar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB: Categorias -->
-      <div id="admin-tab-cats" style="display:none;">
-        <div class="post-form">
-          <p class="form-section-title">Categorias do blog</p>
-          <p style="font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text-dim);margin-bottom:1rem;font-style:italic;">Estas categorias aparecem no menu de filtro do blog.</p>
-          <div class="cat-admin-list" id="cat-admin-list"></div>
-          <div class="cat-add-row">
-            <input type="text" class="form-input cat-add-input" id="cat-new-input" placeholder="Nova categoria…" onkeydown="if(event.key==='Enter')addCategory()">
-            <button class="btn-primary" onclick="addCategory()">Adicionar</button>
-          </div>
-          <div style="margin-top:1.2rem;">
-            <button class="btn-primary" onclick="saveCategories()">💾 Salvar categorias</button>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /admin-panel -->
-  </div><!-- /admin-view -->
-
 </main>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // CONFIG
-// ═══════════════════════════════════════════════════════
-const ADMIN_PASSWORD = "terreiro"; // ← troque aqui
+// ═══════════════════════════════════════════════
+const ADMIN_PASSWORD = "bolhasdeluz2026"; // ← troque aqui
+const AUTHOR_NAME    = "Mãe Anna";
 
-const DEFAULT_CATEGORIES = ["Notícias","Fundamentos","História","Reflexões"];
-
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════════════════
-let _posts       = [];
-let _categories  = [...DEFAULT_CATEGORIES];
-let _activeFilter= "todas";
-let _activePid   = null;
-let _unsubPosts  = null;
-let _unsubComm   = null;
-let _adminUnlocked = false;
-let _editingId   = null;
+// ═══════════════════════════════════════════════
+let _posts      = [];
+let _cats       = ["Notícias","Fundamentos","História","Reflexões"];
+let _filter     = "todas";
+let _activePid  = null;
+let _unsubPosts = null;
+let _unsubComm  = null;
+let _isAdmin    = false;
+let _slotCount  = 0;
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // VIEWS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 function showView(v) {
-  ["list-view","post-view","admin-view"].forEach(id => {
-    document.getElementById(id).style.display = "none";
-  });
-  document.getElementById(v === "list" ? "list-view" : v === "post" ? "post-view" : "admin-view").style.display = "";
-  if (v !== "post") { if (_unsubComm) { _unsubComm(); _unsubComm = null; } }
-  if (v === "admin" && !_adminUnlocked) {
-    document.getElementById("admin-login-screen").style.display = "";
-    document.getElementById("admin-panel").style.display = "none";
-  }
-  if (v === "list") window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("list-view").style.display  = v==="list"  ? "" : "none";
+  document.getElementById("post-view").style.display  = v==="post"  ? "" : "none";
+  if (v !== "post" && _unsubComm) { _unsubComm(); _unsubComm = null; }
+  if (v === "list") window.scrollTo({top:0,behavior:"smooth"});
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// AUTH / ADMIN
+// ═══════════════════════════════════════════════
+function checkAdmin() {
+  const pwd = prompt("Senha admin:");
+  if (pwd === ADMIN_PASSWORD) {
+    _isAdmin = true;
+    document.getElementById("quick-compose").style.display = "";
+    updateHeaderAuth();
+    showToast("Modo admin ativado ✨");
+  } else if (pwd !== null) {
+    showToast("Senha incorreta.", true);
+  }
+}
+
+function updateHeaderAuth() {
+  const user = window._currentUser;
+  const el   = document.getElementById("header-auth");
+  if (_isAdmin) {
+    el.innerHTML = `
+      ${user ? `<img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">` : ""}
+      <span class="btn-pill active">Admin</span>
+      <button class="btn-pill" onclick="window._fbSignOut?.(); _isAdmin=false; document.getElementById('quick-compose').style.display='none'; updateHeaderAuth();">Sair</button>`;
+  } else if (user) {
+    el.innerHTML = `
+      <img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">
+      <span class="btn-pill active">${user.displayName.split(" ")[0]}</span>
+      <button class="btn-pill" onclick="checkAdmin()">Admin</button>`;
+  } else {
+    el.innerHTML = `
+      <button class="btn-pill" onclick="window._fbSignIn()">Entrar</button>
+      <button class="btn-pill" onclick="checkAdmin()">Admin</button>`;
+  }
+  updateCommentUI();
+}
+
+function updateCommentUI() {
+  const user  = window._currentUser;
+  const gate  = document.getElementById("comment-auth-gate");
+  const form  = document.getElementById("comment-form-wrap");
+  if (!gate||!form) return;
+  if (user) {
+    gate.style.display="none"; form.style.display="";
+    document.getElementById("form-user-avatar").src = user.photoURL;
+    document.getElementById("form-user-name").textContent = user.displayName;
+  } else {
+    gate.style.display=""; form.style.display="none";
+  }
+}
+
+// ═══════════════════════════════════════════════
 // CATEGORIAS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 function renderCatMenu() {
-  // Header desktop
-  const nav = document.getElementById("header-cats");
-  nav.innerHTML = `<button class="cat-pill ${_activeFilter==='todas'?'active':''}" onclick="filterCat('todas')">Todas</button>` +
-    _categories.map(c => `<button class="cat-pill ${_activeFilter===c?'active':''}" onclick="filterCat('${c.replace(/'/g,"\\'")}')">
-      ${c}</button>`).join("");
+  // Header
+  document.getElementById("header-cats").innerHTML =
+    `<button class="cat-pill ${_filter==='todas'?'active':''}" onclick="filterCat('todas')">Todas</button>` +
+    _cats.map(c=>`<button class="cat-pill ${_filter===c?'active':''}" onclick="filterCat(${JSON.stringify(c)})">${c}</button>`).join("");
 
-  // Select mobile
+  // Mobile
   const sel = document.getElementById("mobile-cat-select");
-  sel.innerHTML = `<option value="todas">Todas</option>` +
-    _categories.map(c => `<option value="${c}" ${_activeFilter===c?"selected":""}>${c}</option>`).join("");
+  sel.innerHTML = `<option value="todas">Todas</option>` + _cats.map(c=>`<option value="${c}" ${_filter===c?"selected":""}>${c}</option>`).join("");
 
-  // Select no formulário
-  const fcat = document.getElementById("f-category");
-  if (fcat) fcat.innerHTML = _categories.map(c => `<option>${c}</option>`).join("");
+  // Admin chips
+  const cl = document.getElementById("cat-list-admin");
+  if (cl) cl.innerHTML = _cats.map((c,i)=>`
+    <div class="cat-chip">
+      <span>${c}</span>
+      <button class="cat-chip-rm" onclick="removeCategory(${i})">×</button>
+    </div>`).join("");
 
-  // Admin list
-  renderCatAdminList();
+  // Selects nos slots
+  document.querySelectorAll(".slot-cat-select").forEach(sel=>{
+    const cur = sel.value;
+    sel.innerHTML = _cats.map(c=>`<option ${c===cur?"selected":""}>${c}</option>`).join("");
+  });
 }
 
-function renderCatAdminList() {
-  const el = document.getElementById("cat-admin-list");
-  if (!el) return;
-  el.innerHTML = _categories.map((c,i) => `
-    <div class="cat-admin-item">
-      <span class="cat-admin-name">${c}</span>
-      <button class="cat-admin-remove" onclick="removeCategory(${i})" title="Remover">×</button>
-    </div>`).join("") || '<span style="color:var(--text-dim);font-size:.85rem;">Nenhuma categoria</span>';
-}
-
-function filterCat(cat) {
-  _activeFilter = cat;
-  renderCatMenu();
-  renderPostList();
-}
-
+function filterCat(cat) { _filter=cat; renderCatMenu(); renderPostList(); }
 function addCategory() {
-  const input = document.getElementById("cat-new-input");
-  const val = (input.value || "").trim();
-  if (!val || _categories.includes(val)) return;
-  _categories.push(val);
-  input.value = "";
-  renderCatMenu();
+  const inp = document.getElementById("cat-new-input");
+  const v = (inp.value||"").trim();
+  if (!v || _cats.includes(v)) return;
+  _cats.push(v); inp.value=""; renderCatMenu();
 }
-
-function removeCategory(i) {
-  _categories.splice(i, 1);
-  renderCatMenu();
-}
-
+function removeCategory(i) { _cats.splice(i,1); renderCatMenu(); }
 async function saveCategories() {
+  try { await window._saveCategories(_cats); showToast("Categorias salvas! ✨"); }
+  catch(e) { showToast("Firebase não configurado — salvo localmente.", false); }
+}
+
+// ═══════════════════════════════════════════════
+// SLOTS DE REDAÇÃO RÁPIDA
+// ═══════════════════════════════════════════════
+function addSlot(data={}) {
+  _slotCount++;
+  const id  = `slot-${_slotCount}`;
+  const sid = _slotCount;
+  const today = new Date().toISOString().slice(0,10);
+
+  const wrap = document.createElement("div");
+  wrap.className = "slot";
+  wrap.id = id;
+  wrap.innerHTML = `
+    <div class="slot-head">
+      <span class="slot-num">#${sid}</span>
+      <div class="slot-head-fields">
+        <input type="text" class="slot-input-sm title-field" id="${id}-title"
+          placeholder="Título do post…" value="${escAttr(data.title||'')}"
+          oninput="autoSlugSlot('${id}')">
+        <select class="slot-select slot-cat-select" id="${id}-cat">
+          ${_cats.map(c=>`<option ${c===(data.category||_cats[0])?"selected":""}>${c}</option>`).join("")}
+        </select>
+        <input type="date" class="slot-input-sm slot-date" id="${id}-date" value="${data.date||today}">
+      </div>
+      <button class="slot-remove" onclick="removeSlot('${id}')" title="Remover">✕</button>
+    </div>
+    <div class="slot-body">
+      <div class="slot-col">
+        <span class="slot-col-label">📋 Texto bruto</span>
+        <textarea class="slot-textarea raw" id="${id}-raw"
+          placeholder="Cole aqui o texto do WhatsApp, outro blog, rascunho…">${escAttr(data.raw||'')}</textarea>
+        <div class="slot-col-actions">
+          <button class="btn-slot" id="${id}-btn-fmt" onclick="slotFormat('${id}')">
+            <span id="${id}-spin-fmt" class="slot-spinner"></span>
+            ✨ Formatar
+          </button>
+          <button class="btn-slot green" id="${id}-btn-exc" onclick="slotExcerpt('${id}')">
+            <span id="${id}-spin-exc" class="slot-spinner"></span>
+            📝 Resumo
+          </button>
+        </div>
+      </div>
+      <div class="slot-col">
+        <span class="slot-col-label">✅ Resumo editável (excerpt)</span>
+        <textarea class="slot-textarea resume" id="${id}-excerpt"
+          placeholder="O resumo gerado pela IA aparece aqui — edite à vontade antes de publicar.">${escAttr(data.excerpt||'')}</textarea>
+        <div style="margin-top:.4rem;">
+          <span class="slot-col-label" style="display:block;margin-bottom:.35rem;">Corpo formatado (HTML)</span>
+          <textarea class="slot-textarea" id="${id}-body" style="min-height:80px;font-size:.82rem;"
+            placeholder="HTML gerado pela IA — ou cole diretamente.">${escAttr(data.body||'')}</textarea>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById("slots-container").appendChild(wrap);
+}
+
+function removeSlot(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function autoSlugSlot(id) {
+  // só para referência interna, slug gerado no publish
+}
+
+// ─── IA por slot ──────────────────────────────
+async function slotFormat(id) {
+  const raw = document.getElementById(`${id}-raw`).value.trim();
+  if (!raw) { showToast("Cole o texto bruto primeiro.", true); return; }
+  const btn = document.getElementById(`${id}-btn-fmt`);
+  const spin = document.getElementById(`${id}-spin-fmt`);
+  btn.disabled=true; spin.style.display="inline-block";
   try {
-    await window._saveCategories(_categories);
-    showToast("Categorias salvas! ✨");
+    const html = await callAI(
+      `Você é editora do blog espiritual "Terreiro Bolhas de Luz" (Umbanda e Quimbanda, Porto Alegre, RS).
+Transforme o texto bruto em HTML limpo para o blog.
+REGRAS: use apenas <p> <h2> <h3> <blockquote> <em> <strong>. Preserve a voz da autora. Corrija erros discretamente. Falas de entidades em <blockquote>. Retorne SOMENTE o HTML, sem explicações, sem markdown.`,
+      `Texto bruto:\n\n${raw}`
+    );
+    document.getElementById(`${id}-body`).value = html;
+    showToast("Formatado! ✨");
+  } catch(e) { showToast("Erro na API.", true); }
+  btn.disabled=false; spin.style.display="none";
+}
+
+async function slotExcerpt(id) {
+  const raw  = document.getElementById(`${id}-raw`).value.trim();
+  const body = document.getElementById(`${id}-body`).value.trim();
+  const src  = body || raw;
+  if (!src) { showToast("Formate o texto primeiro.", true); return; }
+  const btn  = document.getElementById(`${id}-btn-exc`);
+  const spin = document.getElementById(`${id}-spin-exc`);
+  btn.disabled=true; spin.style.display="inline-block";
+  try {
+    const text = await callAI(
+      `Escreva um resumo curto (2-3 frases, máx 280 caracteres) para a listagem do blog "Terreiro Bolhas de Luz". Tom acolhedor, espiritual, direto. Retorne APENAS o texto do resumo, sem aspas, sem preâmbulo.`,
+      src.replace(/<[^>]+>/g," ").replace(/\s+/g," ").slice(0,3000)
+    );
+    document.getElementById(`${id}-excerpt`).value = text;
+    showToast("Resumo gerado! ✨");
+  } catch(e) { showToast("Erro na API.", true); }
+  btn.disabled=false; spin.style.display="none";
+}
+
+// ─── Publicar todos ───────────────────────────
+async function publishAll() {
+  const slots = document.querySelectorAll(".slot");
+  if (!slots.length) { showToast("Nenhum post para publicar.", true); return; }
+
+  const btn  = document.getElementById("btn-publish-all");
+  const spin = document.getElementById("batch-spinner");
+  btn.disabled=true; spin.style.display="inline-block";
+
+  const toSave = [];
+  const errors = [];
+
+  slots.forEach(slot => {
+    const id    = slot.id;
+    const title = (document.getElementById(`${id}-title`)?.value||"").trim();
+    const body  = (document.getElementById(`${id}-body`)?.value||"").trim();
+    const excerpt=(document.getElementById(`${id}-excerpt`)?.value||"").trim();
+    const cat   = document.getElementById(`${id}-cat`)?.value || _cats[0];
+    const dateVal = document.getElementById(`${id}-date`)?.value || new Date().toISOString().slice(0,10);
+
+    if (!title) { errors.push(`#${id}: título obrigatório`); return; }
+
+    const slug = title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/[^a-z0-9\s-]/g,"").trim().replace(/\s+/g,"-")
+      + "-" + dateVal.replace(/-/g,"");
+
+    const [y,m,d] = dateVal.split("-");
+    toSave.push({ id:slug, title, category:cat, body, excerpt, date:`${d}/${m}/${y}`, dateSort:dateVal, author: AUTHOR_NAME });
+  });
+
+  if (errors.length) { showToast(errors[0], true); btn.disabled=false; spin.style.display="none"; return; }
+
+  try {
+    await window._savePosts(toSave);
+    showToast(`${toSave.length} post(s) publicado(s)! 🎉`);
+    document.getElementById("slots-container").innerHTML = "";
   } catch(e) {
-    showToast("Configure o Firebase para salvar.", true);
+    // fallback local
+    toSave.forEach(p => {
+      const idx = _posts.findIndex(x=>x.id===p.id);
+      if (idx>=0) _posts[idx]=p; else _posts.unshift(p);
+    });
+    _posts.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
+    renderPostList();
+    document.getElementById("slots-container").innerHTML = "";
+    showToast(`${toSave.length} post(s) salvo(s) localmente (configure Firebase).`);
   }
+
+  btn.disabled=false; spin.style.display="none";
 }
 
-async function loadCategories() {
-  try {
-    const cats = await window._loadCategories();
-    if (cats && cats.length) { _categories = cats; renderCatMenu(); }
-  } catch(e) { /* Firebase não configurado */ }
-}
-
-// ═══════════════════════════════════════════════════════
-// POSTS — carregamento
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// POSTS — listagem
+// ═══════════════════════════════════════════════
 function initPosts() {
   try {
-    _unsubPosts = window._loadPosts(posts => {
-      _posts = posts;
-      renderPostList();
-      renderAdminPostList();
-    });
+    _unsubPosts = window._loadPosts(posts => { _posts=posts; renderPostList(); });
   } catch(e) {
-    // Firebase não configurado — usa posts de exemplo
     _posts = SAMPLE_POSTS;
     renderPostList();
-    renderAdminPostList();
   }
 }
 
 const SAMPLE_POSTS = [
-  {
-    id:"o-que-e-umbanda", category:"Fundamentos", title:"O que é Umbanda? Uma introdução com amor",
-    date:"20/06/2026", dateSort:"2026-06-20",
+  { id:"o-que-e-umbanda", category:"Fundamentos", title:"O que é Umbanda?", date:"20/06/2026", dateSort:"2026-06-20", author:"Mãe Anna",
     excerpt:"A Umbanda é uma religião brasileira que nasce do encontro de três raízes: a espiritualidade africana, a sabedoria indígena e o espiritismo.",
-    body:`<p>A Umbanda é uma religião brasileira que nasce do encontro de três raízes: a espiritualidade africana, a sabedoria indígena e o espiritismo. Mais do que um conjunto de práticas, é uma forma de viver com generosidade.</p>
-<h2>Onde tudo começa</h2>
-<p>A Umbanda surgiu no Brasil no início do século XX, num momento em que culturas distintas precisavam encontrar uma linguagem comum.</p>
-<blockquote>Umbanda é amor. É o coração que se abre antes da mente que compreende.</blockquote>`
-  },
-  {
-    id:"pretos-velhos", category:"Reflexões", title:"Pretos Velhos: os avôs que a história tentou esquecer",
-    date:"05/06/2026", dateSort:"2026-06-05",
+    body:`<p>A Umbanda surgiu no Brasil no início do século XX, num momento em que culturas distintas precisavam encontrar uma linguagem comum.</p><blockquote>Umbanda é amor. É o coração que se abre antes da mente que compreende.</blockquote>` },
+  { id:"pretos-velhos", category:"Reflexões", title:"Pretos Velhos: os avôs que a história tentou esquecer", date:"05/06/2026", dateSort:"2026-06-05", author:"Mãe Anna",
     excerpt:"Na gira de Preto Velho, o tempo desacelera. A sabedoria não vem em gestos rápidos — ela vem no cachimbo, no banco de madeira.",
-    body:`<p>Na gira de Preto Velho, o tempo desacelera. A sabedoria não vem em volume alto nem em gestos rápidos — ela vem no cachimbo, no banco de madeira, na paciência infinita de quem já viveu tudo.</p>
-<blockquote>Meu filho, você veio até mim com a cabeça cheia e o coração vazio. Senta aqui.</blockquote>`
-  }
+    body:`<p>Na gira de Preto Velho, o tempo desacelera.</p><blockquote>Meu filho, você veio até mim com a cabeça cheia e o coração vazio. Senta aqui.</blockquote>` }
 ];
 
-// ═══════════════════════════════════════════════════════
-// POSTS — renderização
-// ═══════════════════════════════════════════════════════
 function renderPostList() {
-  const container = document.getElementById("post-list");
-  const filtered = _activeFilter === "todas" ? _posts : _posts.filter(p => p.category === _activeFilter);
+  const list = _filter==="todas" ? _posts : _posts.filter(p=>p.category===_filter);
+  const el   = document.getElementById("post-list");
 
-  if (filtered.length === 0) {
-    container.innerHTML = `<p class="empty-state">Nenhum post nesta categoria ainda. 🌙</p>`;
+  if (!list.length) {
+    el.innerHTML = '<p class="empty-state">Nenhum post nesta categoria ainda. 🌙</p>';
     return;
   }
 
-  container.innerHTML = filtered.map(post => `
-    <div class="post-card" onclick="openPost('${post.id}')">
+  el.innerHTML = list.map(p => `
+    <div class="post-card" onclick="openPost('${p.id}')">
       <div class="post-card-top">
-        <span class="cat-badge">${post.category || "Geral"}</span>
-        <span class="post-date">${post.date || ""}</span>
+        <span class="cat-badge">${p.category||"Geral"}</span>
+        <span class="post-author-badge">✍️ ${p.author||AUTHOR_NAME}</span>
+        <span class="post-date">${p.date||""}</span>
       </div>
       <div class="post-card-body">
-        <h2 class="post-card-title">${post.title}</h2>
-        <p class="post-card-excerpt">${post.excerpt || ""}</p>
+        <h2 class="post-card-title">${p.title}</h2>
+        <p class="post-card-excerpt">${p.excerpt||""}</p>
       </div>
       <div class="post-card-footer">
         <span class="comment-count">💬 comentários</span>
-        <span class="read-more">Ler mais →</span>
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          ${_isAdmin ? `
+            <div class="admin-post-btns">
+              <button class="btn-edit-post" onclick="event.stopPropagation();editPostInSlot('${p.id}')">Editar</button>
+              <button class="btn-del-post" onclick="event.stopPropagation();deletePost('${p.id}')">Excluir</button>
+            </div>` : ""}
+          <span class="read-more">Ler mais →</span>
+        </div>
       </div>
     </div>`).join("");
 }
 
-function renderAdminPostList() {
-  const el = document.getElementById("admin-post-list");
-  if (!el) return;
-  if (_posts.length === 0) {
-    el.innerHTML = '<p class="empty-state">Nenhum post ainda. Crie o primeiro!</p>';
-    return;
+function editPostInSlot(id) {
+  const p = _posts.find(x=>x.id===id);
+  if (!p) return;
+  addSlot({ title:p.title, category:p.category, date:p.dateSort||"", raw:"", excerpt:p.excerpt||"", body:p.body||"" });
+  // scroll pra área de redação
+  document.getElementById("quick-compose").scrollIntoView({behavior:"smooth"});
+  showToast("Post carregado para edição.");
+}
+
+async function deletePost(id) {
+  if (!confirm("Excluir este post?")) return;
+  try { await window._deletePost(id); showToast("Excluído."); }
+  catch(e) {
+    _posts = _posts.filter(p=>p.id!==id);
+    renderPostList();
+    showToast("Removido localmente.");
   }
-  el.innerHTML = _posts.map(p => `
-    <div class="admin-post-item">
-      <div class="admin-post-item-info">
-        <div class="admin-post-item-title">${p.title}</div>
-        <div class="admin-post-item-meta">${p.category} · ${p.date}</div>
-      </div>
-      <div class="admin-post-actions">
-        <button class="btn-secondary" style="font-size:10px;padding:6px 12px;" onclick="editPost('${p.id}')">Editar</button>
-        <button class="btn-danger" onclick="deletePost('${p.id}')">Excluir</button>
-      </div>
-    </div>`).join("");
 }
 
-// ═══════════════════════════════════════════════════════
-// ABRIR POST
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// POST INDIVIDUAL
+// ═══════════════════════════════════════════════
 function openPost(id) {
-  const post = _posts.find(p => p.id === id);
-  if (!post) return;
+  const p = _posts.find(x=>x.id===id); if(!p) return;
   _activePid = id;
-
-  document.getElementById("post-full-title").textContent = post.title;
-  document.getElementById("post-full-body").innerHTML    = post.body || "";
-  document.getElementById("post-full-date").textContent  = post.date || "";
-  document.getElementById("post-meta-badges").innerHTML  =
-    `<span class="cat-badge">${post.category || "Geral"}</span>`;
-
+  document.getElementById("pv-title").textContent = p.title;
+  document.getElementById("pv-body").innerHTML    = p.body||"";
+  document.getElementById("pv-date").textContent  = p.date||"";
+  document.getElementById("pv-author").textContent= `${p.author||AUTHOR_NAME} · Terreiro Bolhas de Luz`;
+  document.getElementById("pv-badges").innerHTML  = `<span class="cat-badge">${p.category||"Geral"}</span>`;
   showView("post");
 
-  // Comentários em tempo real
   if (_unsubComm) _unsubComm();
   const listEl = document.getElementById("comments-list");
   listEl.innerHTML = '<div class="spinner"></div>';
   try {
     _unsubComm = window._loadComments(id, comments => {
       if (!comments.length) {
-        listEl.innerHTML = '<p class="comments-empty">Ainda não há comentários. 🌟</p>';
+        listEl.innerHTML='<p class="comments-empty">Seja o primeiro a comentar. 🌟</p>';
       } else {
-        listEl.innerHTML = comments.map(c => {
+        listEl.innerHTML = comments.map(c=>{
           const ts = c.createdAt?.toDate?.();
-          const t = ts ? ts.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+          const t  = ts ? ts.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
           return `<div class="comment-item">
             <div class="comment-header">
               <img src="${c.authorPhoto||''}" class="comment-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.authorName)}&background=fce8ef&color=c4396b&size=52'">
@@ -767,327 +781,69 @@ function openPost(id) {
       }
     });
   } catch(e) {
-    listEl.innerHTML = '<p class="comments-empty">Configure o Firebase para ativar comentários.</p>';
+    listEl.innerHTML='<p class="comments-empty">Configure o Firebase para ativar comentários.</p>';
   }
-  updateAuthUI();
+  updateCommentUI();
 }
 
-// ═══════════════════════════════════════════════════════
-// ADMIN — acesso
-// ═══════════════════════════════════════════════════════
-function checkAdminPwd() {
-  const pwd = document.getElementById("admin-pwd-input").value;
-  if (pwd === ADMIN_PASSWORD) {
-    _adminUnlocked = true;
-    document.getElementById("admin-login-screen").style.display = "none";
-    document.getElementById("admin-panel").style.display = "";
-    renderAdminPostList();
-    renderCatAdminList();
-  } else {
-    showToast("Senha incorreta.", true);
-    document.getElementById("admin-pwd-input").value = "";
-  }
-}
-
-function adminTab(name, btn) {
-  ["posts","new","cats"].forEach(t => {
-    document.getElementById("admin-tab-"+t).style.display = t===name ? "" : "none";
-  });
-  document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  if (name === "new" && !_editingId) clearForm();
-}
-
-// ═══════════════════════════════════════════════════════
-// ADMIN — form de post
-// ═══════════════════════════════════════════════════════
-function autoSlug() {
-  if (_editingId) return; // não sobrescreve ao editar
-  const title = document.getElementById("f-title").value;
-  document.getElementById("f-slug").value = title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9\s-]/g,"")
-    .trim().replace(/\s+/g,"-");
-}
-
-function clearForm() {
-  _editingId = null;
-  document.getElementById("edit-post-id").value = "";
-  document.getElementById("f-title").value = "";
-  document.getElementById("f-slug").value = "";
-  document.getElementById("f-raw").value = "";
-  document.getElementById("f-body").value = "";
-  document.getElementById("f-excerpt").value = "";
-  document.getElementById("f-date").value = new Date().toISOString().slice(0,10);
-  const fcat = document.getElementById("f-category");
-  if (fcat && fcat.options.length) fcat.selectedIndex = 0;
-}
-
-function editPost(id) {
-  const post = _posts.find(p => p.id === id);
-  if (!post) return;
-  _editingId = id;
-  document.getElementById("edit-post-id").value = id;
-  document.getElementById("f-title").value   = post.title || "";
-  document.getElementById("f-slug").value    = post.id;
-  document.getElementById("f-body").value    = post.body || "";
-  document.getElementById("f-excerpt").value = post.excerpt || "";
-  document.getElementById("f-raw").value     = "";
-
-  // data
-  if (post.dateSort) document.getElementById("f-date").value = post.dateSort;
-
-  // categoria
-  const fcat = document.getElementById("f-category");
-  if (fcat) {
-    for (let i = 0; i < fcat.options.length; i++) {
-      if (fcat.options[i].value === post.category) { fcat.selectedIndex = i; break; }
-    }
-  }
-
-  // vai pra aba new
-  document.querySelectorAll(".admin-tab").forEach((b,i) => {
-    b.classList.toggle("active", i===1);
-  });
-  ["posts","new","cats"].forEach(t => {
-    document.getElementById("admin-tab-"+t).style.display = t==="new" ? "" : "none";
-  });
-}
-
-async function savePost() {
-  const title   = document.getElementById("f-title").value.trim();
-  const slug    = document.getElementById("f-slug").value.trim();
-  const body    = document.getElementById("f-body").value.trim();
-  const excerpt = document.getElementById("f-excerpt").value.trim();
-  const dateVal = document.getElementById("f-date").value;
-  const cat     = document.getElementById("f-category").value;
-
-  if (!title || !slug) { showToast("Título e slug são obrigatórios.", true); return; }
-
-  const dateSort = dateVal || new Date().toISOString().slice(0,10);
-  const [y,m,d]  = dateSort.split("-");
-  const dateFmt  = `${d}/${m}/${y}`;
-
-  const post = { id: slug, title, category: cat, body, excerpt, date: dateFmt, dateSort };
-
-  try {
-    await window._savePosts([post]);
-    showToast("Post salvo! ✨");
-    clearForm();
-  } catch(e) {
-    // Firebase não configurado — salva localmente
-    const idx = _posts.findIndex(p => p.id === slug);
-    if (idx >= 0) _posts[idx] = post; else _posts.unshift(post);
-    _posts.sort((a,b) => b.dateSort.localeCompare(a.dateSort));
-    renderPostList();
-    renderAdminPostList();
-    showToast("Salvo localmente (configure Firebase para persistir).");
-    clearForm();
-  }
-}
-
-async function deletePost(id) {
-  if (!confirm("Excluir este post? Esta ação não pode ser desfeita.")) return;
-  try {
-    await window._deletePost(id);
-    showToast("Post excluído.");
-  } catch(e) {
-    _posts = _posts.filter(p => p.id !== id);
-    renderPostList();
-    renderAdminPostList();
-    showToast("Removido localmente.");
-  }
-}
-
-function previewPost() {
-  const title = document.getElementById("f-title").value;
-  const body  = document.getElementById("f-body").value;
-  const dateVal = document.getElementById("f-date").value;
-  const [y,m,d] = (dateVal || "2026-01-01").split("-");
-  const post = {
-    id: "__preview__", title,
-    body, excerpt: document.getElementById("f-excerpt").value,
-    category: document.getElementById("f-category").value,
-    date: `${d}/${m}/${y}`, dateSort: dateVal
-  };
-  // Injeta temporariamente
-  const existing = _posts.findIndex(p => p.id === "__preview__");
-  if (existing >= 0) _posts[existing] = post; else _posts.unshift(post);
-  openPost("__preview__");
-}
-
-// ═══════════════════════════════════════════════════════
-// IA — Formatar texto bruto
-// ═══════════════════════════════════════════════════════
-async function aiFormat() {
-  const raw = document.getElementById("f-raw").value.trim();
-  if (!raw) { showToast("Cole o texto bruto primeiro.", true); return; }
-
-  const btn = document.getElementById("btn-ai-format");
-  const spinner = document.getElementById("ai-spinner-format");
-  btn.disabled = true;
-  spinner.style.display = "inline-block";
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: `Você é uma editora do blog espiritual "Terreiro Bolhas de Luz", sobre Umbanda e Quimbanda em Porto Alegre, RS.
-
-Sua tarefa: transformar texto bruto (geralmente de WhatsApp ou outro blog) em HTML limpo e bem estruturado para o blog.
-
-REGRAS OBRIGATÓRIAS:
-- Use apenas: <p>, <h2>, <h3>, <blockquote>, <em>, <strong>
-- Preserve o tom original e a voz da autora. Não adicione floreios nem linguagem corporativa.
-- Corrija erros de digitação e pontuação discretamente.
-- Divida em parágrafos lógicos.
-- Se houver citações, aspas ou falas de entidades, use <blockquote>.
-- Retorne SOMENTE o HTML limpo, sem explicações, sem \`\`\`, sem preâmbulo.`,
-        messages: [{ role: "user", content: `Texto bruto para formatar:\n\n${raw}` }]
-      })
-    });
-    const data = await res.json();
-    const html = data.content?.find(b => b.type === "text")?.text || "";
-    if (html) {
-      document.getElementById("f-body").value = html.trim();
-      showToast("Texto formatado! ✨");
-    } else {
-      showToast("Não consegui formatar. Tente novamente.", true);
-    }
-  } catch(e) {
-    showToast("Erro na API. Verifique a conexão.", true);
-    console.error(e);
-  }
-
-  btn.disabled = false;
-  spinner.style.display = "none";
-}
-
-async function aiExcerpt() {
-  const raw  = document.getElementById("f-raw").value.trim();
-  const body = document.getElementById("f-body").value.trim();
-  const source = body || raw;
-  if (!source) { showToast("Preencha o texto ou formate primeiro.", true); return; }
-
-  const btn = document.getElementById("btn-ai-excerpt");
-  const spinner = document.getElementById("ai-spinner-excerpt");
-  btn.disabled = true;
-  spinner.style.display = "inline-block";
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: `Você é editora do blog "Terreiro Bolhas de Luz". Escreva um resumo curto (2 a 3 frases, no máximo 280 caracteres) para a listagem do blog. O resumo deve capturar a essência do texto e convidar à leitura. Tom: acolhedor, espiritual, direto. Retorne APENAS o texto do resumo, sem aspas, sem preâmbulo.`,
-        messages: [{ role: "user", content: source.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim() }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.find(b => b.type === "text")?.text || "";
-    if (text) {
-      document.getElementById("f-excerpt").value = text.trim();
-      showToast("Resumo gerado! ✨");
-    }
-  } catch(e) {
-    showToast("Erro na API.", true);
-    console.error(e);
-  }
-
-  btn.disabled = false;
-  spinner.style.display = "none";
-}
-
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // COMENTÁRIOS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 async function submitComment() {
-  const input = document.getElementById("comment-input");
-  const btn   = document.getElementById("comment-submit-btn");
-  const text  = (input.value || "").trim();
-  if (!text || !_activePid) return;
-  btn.disabled = true; btn.textContent = "Publicando…";
-  try {
-    await window._addComment(_activePid, text);
-    input.value = "";
-    showToast("Comentário publicado! ✨");
-  } catch(e) {
-    showToast("Erro ao publicar.", true);
-  }
-  btn.disabled = false; btn.textContent = "Publicar comentário";
+  const inp = document.getElementById("comment-input");
+  const btn = document.getElementById("btn-comment-submit");
+  const txt = (inp.value||"").trim();
+  if (!txt||!_activePid) return;
+  btn.disabled=true; btn.textContent="Publicando…";
+  try { await window._addComment(_activePid,txt); inp.value=""; showToast("Comentário publicado! ✨"); }
+  catch(e) { showToast("Erro ao publicar.",true); }
+  btn.disabled=false; btn.textContent="Publicar";
 }
 
-// ═══════════════════════════════════════════════════════
-// AUTH UI
-// ═══════════════════════════════════════════════════════
-function updateAuthUI() {
-  const user = window._currentUser;
-  const headerAuth = document.getElementById("header-auth");
-
-  if (user) {
-    headerAuth.innerHTML = `
-      <img src="${user.photoURL}" class="user-avatar" onerror="this.style.display='none'" alt="">
-      <span class="btn-pill user-pill">${user.displayName.split(" ")[0]}</span>
-      <button class="btn-pill" onclick="showView('admin')">Admin</button>`;
-  } else {
-    headerAuth.innerHTML = `<button class="btn-pill" onclick="window._fbSignIn()">Entrar</button>
-      <button class="btn-pill" onclick="showView('admin')">Admin</button>`;
-  }
-
-  const gate = document.getElementById("comment-auth-gate");
-  const form = document.getElementById("comment-form-wrap");
-  if (!gate || !form) return;
-
-  if (user) {
-    gate.style.display = "none"; form.style.display = "";
-    const av = document.getElementById("form-user-avatar");
-    const nm = document.getElementById("form-user-name");
-    if (av) { av.src = user.photoURL; av.onerror = () => av.style.display="none"; }
-    if (nm) nm.textContent = user.displayName;
-  } else {
-    gate.style.display = ""; form.style.display = "none";
-  }
+// ═══════════════════════════════════════════════
+// IA helper
+// ═══════════════════════════════════════════════
+async function callAI(system, userMsg) {
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-6", max_tokens:1000,
+      system, messages:[{role:"user",content:userMsg}]
+    })
+  });
+  const data = await res.json();
+  return (data.content?.find(b=>b.type==="text")?.text||"").trim();
 }
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // UTILS
-// ═══════════════════════════════════════════════════════
-function showToast(msg, isError = false) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.className = "toast" + (isError ? " error" : "");
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3200);
+// ═══════════════════════════════════════════════
+function showToast(msg,isError=false){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.className="toast"+(isError?" error":"");
+  t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200);
 }
+function escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");}
+function escAttr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;");}
 
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;").replace(/\n/g,"<br>");
-}
-
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════
-document.addEventListener("authChanged", updateAuthUI);
-
-document.addEventListener("keydown", e => {
-  if (e.target.id === "comment-input" && (e.ctrlKey || e.metaKey) && e.key === "Enter") submitComment();
-  if (e.target.id === "admin-pwd-input" && e.key === "Enter") checkAdminPwd();
+// ═══════════════════════════════════════════════
+document.addEventListener("authChanged", updateHeaderAuth);
+document.addEventListener("keydown", e=>{
+  if (e.target.id==="comment-input"&&(e.ctrlKey||e.metaKey)&&e.key==="Enter") submitComment();
 });
 
-// Carrega tudo
-renderCatMenu();
-loadCategories().then(() => {
+async function init() {
   renderCatMenu();
+  try {
+    const cats = await window._loadCategories();
+    if (cats?.length) { _cats=cats; renderCatMenu(); }
+  } catch(e) {}
   initPosts();
-});
+}
+init();
 </script>
 </body>
 </html>
